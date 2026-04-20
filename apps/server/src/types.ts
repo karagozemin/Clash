@@ -1,4 +1,5 @@
 export type Decision = "BUY" | "SELL" | "HOLD" | "DO_NOT_TOUCH" | "LAUNCH" | "WAIT";
+export type MatchMode = "simulation" | "live-ai" | "demo";
 
 export type AgentRole = "TRADER" | "RISK" | "MANIPULATOR" | "STRATEGIST" | "CHAOS";
 
@@ -33,13 +34,14 @@ export interface ScenarioAnalysis {
 }
 
 export type MatchEvent =
-  | { type: "match_started"; sessionId: string; scenario: string; timestamp: number }
+  | { type: "match_started"; sessionId: string; scenario: string; mode: MatchMode; timestamp: number }
   | { type: "agent_thinking"; sessionId: string; agentId: string; timestamp: number }
   | { type: "agent_decision"; sessionId: string; turn: AgentTurn; timestamp: number }
   | { type: "agent_rebuttal"; sessionId: string; agentId: string; text: string; targetAgentId: string; timestamp: number }
   | {
       type: "outcome";
       sessionId: string;
+      mode: MatchMode;
       winnerAgentId: string;
       loserAgentIds: string[];
       manipulationDetected: boolean;

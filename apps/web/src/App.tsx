@@ -2,10 +2,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import { TimelineScrubber } from "./components/TimelineScrubber";
-import { createDeterministicDemoEvents } from "./demoScript";
 import { narrationForEvent } from "./narration";
 import { getDurationMs, getEventMarkers, getRelativeTime, resolveReplayState } from "./replayEngine";
-import type { Decision, MatchEvent } from "./types";
+import type { Decision, MatchEvent, MatchMode } from "./types";
 
 type AgentMeta = {
   id: string;
@@ -45,15 +44,23 @@ const decisionLabel: Record<Decision, string> = {
   WAIT: "WAIT"
 };
 
+const modeLabel: Record<MatchMode, string> = {
+  "live-ai": "LIVE AI",
+  simulation: "SIMULATION",
+  demo: "DEMO"
+};
+
 const socketUrl = (import.meta as ImportMeta & { env: { VITE_CLASH_SERVER?: string } }).env.VITE_CLASH_SERVER ?? "http://localhost:8787";
 
 function App() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [scenario, setScenario] = useState(initialScenarios[0]);
   const [events, setEvents] = useState<MatchEvent[]>([]);
+  const [runMode, setRunMode] = useState<Exclude<MatchMode, "demo">>("live-ai");
   const [cursorMs, setCursorMs] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [serverWarning, setServerWarning] = useState<string | null>(null);
   const [dismissedOutcomeTimestamp, setDismissedOutcomeTimestamp] = useState<number | null>(null);
   const [focusAgentId, setFocusAgentId] = useState<string | null>(null);
   const [focusBeat, setFocusBeat] = useState<"smooth" | "snap" | "aggressive" | "outcome">("smooth");
@@ -222,6 +229,7 @@ function App() {
   useEffect(() => {
     const connection = io(socketUrl, { transports: ["websocket"] });
     setSocket(connection);
+    setServerWarning(null);
 
     connection.on("match:event", (incomingEvent: MatchEvent) => {
       setEvents((previous) => {
@@ -241,7 +249,16 @@ function App() {
       });
     });
 
+    connection.on("match:warning", (payload: { message?: string }) => {
+      const warning = payload?.message?.trim();
+      if (!warning) {
+        return;
+      }
+      setServerWarning(warning);
+    });
+
     return () => {
+      connection.off("match:warning");
       connection.disconnect();
     };
   }, []);
@@ -377,6 +394,7 @@ function App() {
     setEvents(nextEvents);
     setCursorMs(0);
     setIsPlaying(autoPlay);
+    setServerWarning(null);
     setDismissedOutcomeTimestamp(null);
     setFocusAgentId(null);
     setFocusBeat("smooth");
@@ -391,13 +409,21 @@ function App() {
 
     const nextSessionId = `match_${Date.now().toString(36)}`;
     resetPlayback([], true);
-    socket.emit("scenario:start", { scenario: scenario.trim(), sessionId: nextSessionId });
+    socket.emit("scenario:start", { scenario: scenario.trim(), sessionId: nextSessionId, mode: runMode });
   };
 
   const runDemo = () => {
+    if (!socket) {
+      return;
+    }
+
     const demoSessionId = `demo_${Date.now().toString(36)}`;
-    const demoEvents = createDeterministicDemoEvents(demoSessionId);
-    resetPlayback(demoEvents, true);
+    resetPlayback([], true);
+    socket.emit("scenario:start", {
+      scenario: "demo",
+      sessionId: demoSessionId,
+      mode: "demo"
+    });
   };
 
   const exportReplay = () => {
@@ -505,6 +531,12 @@ function App() {
       </section>
 
       <section className="controls-bar">
+        <button className={`control-btn ${runMode === "live-ai" ? "mode-active" : ""}`.trim()} onClick={() => setRunMode("live-ai")}>
+          LIVE AI
+        </button>
+        <button className={`control-btn ${runMode === "simulation" ? "mode-active" : ""}`.trim()} onClick={() => setRunMode("simulation")}>
+          SIMULATION
+        </button>
         <button className="control-btn" onClick={() => setSoundEnabled((prev) => !prev)}>
           {soundEnabled ? "SOUND ON" : "SOUND OFF"}
         </button>
@@ -528,8 +560,14 @@ function App() {
             event.target.value = "";
           }}
         />
-        <span className="status-chip">{replayState.sessionId ? `Session: ${replayState.sessionId}` : "No active session"}</span>
+        <span className="status-chip">
+          {replayState.sessionId
+            ? `Session: ${replayState.sessionId} • ${modeLabel[replayState.mode ?? runMode]}`
+            : `No active session • ${modeLabel[runMode]}`}
+        </span>
       </section>
+
+      {serverWarning && <p className="warning-chip">{serverWarning}</p>}
 
       <section className="scenario-suggestions">
         {initialScenarios.map((item) => (

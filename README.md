@@ -38,6 +38,7 @@ npm run dev
 - `RUN DEMO`: Loads a deterministic cinematic sequence with guaranteed disagreement and manipulation reveal.
 - `REPLAY TIMELINE`: Drag scrubber to seek forward/backward instantly; use `PLAY`, `PAUSE`, and `REPLAY`.
 - `CAMERA MODE`: Replay automatically focuses the active agent and de-emphasizes others.
+- `LIVE AI` / `SIMULATION`: Choose real model-backed agent generation or local deterministic simulation before `INITIATE CLASH`.
 - `SOUND ON/OFF`: Toggles ambient tension and event cues.
 - `EXPORT REPLAY` / `LOAD REPLAY`: Save and reload replay JSON data.
 
@@ -65,12 +66,13 @@ npm run build
 
 - `apps/server/src/index.ts`: Web + Socket server and event scheduling
 - `apps/server/src/agents.ts`: Agent identities, personality logic, rebuttals
+- `apps/server/src/demoRound.ts`: Deterministic judge demo sequence (server-driven)
 - `apps/server/src/engine.ts`: Conflict round execution and outcome scoring
 - `apps/server/src/engine.test.ts`: Engine behavior tests
+- `apps/server/src/liveAgents.ts`: LIVE AI multi-agent orchestration (OpenAI-compatible)
 - `apps/web/src/App.tsx`: Main cinematic experience UI
 - `apps/web/src/components/TimelineScrubber.tsx`: Interactive timeline control and event markers
 - `apps/web/src/replayEngine.ts`: Deterministic event replay state reconstruction
-- `apps/web/src/demoScript.ts`: Hardcoded demo narrative event sequence
 - `apps/web/src/narration.ts`: Event-driven cinematic narration mapping
 - `apps/web/src/styles.css`: Visual identity and animation styling
 
@@ -80,8 +82,22 @@ Optional override for web socket endpoint:
 
 - `VITE_CLASH_SERVER` (default: `http://localhost:8787`)
 
+Server variables for real LIVE AI mode:
+
+- `CLASH_LLM_API_KEY`: Required for `LIVE AI` mode
+- `CLASH_LLM_MODEL`: Optional (default: `gpt-4o-mini`)
+- `CLASH_LLM_BASE_URL`: Optional OpenAI-compatible base URL (default: `https://api.openai.com/v1`)
+
 Create `apps/web/.env` if needed:
 
 ```bash
 VITE_CLASH_SERVER=http://localhost:8787
+```
+
+Create root `.env` (or export env vars in shell) for LIVE AI:
+
+```bash
+CLASH_LLM_API_KEY=your_api_key
+CLASH_LLM_MODEL=gpt-4o-mini
+CLASH_LLM_BASE_URL=https://api.openai.com/v1
 ```

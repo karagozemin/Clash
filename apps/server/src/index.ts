@@ -6,8 +6,10 @@ import { Server } from "socket.io";
 import type { Socket } from "socket.io";
 import { z } from "zod";
 import { AGENTS } from "./agents.js";
+import { getDeterministicDemoRound } from "./demoRound.js";
 import { runConflictRound } from "./engine.js";
-import { MatchEvent } from "./types.js";
+import { runLiveConflictRound } from "./liveAgents.js";
+import { MatchEvent, MatchMode } from "./types.js";
 
 const app = express();
 app.use(cors());
@@ -30,7 +32,8 @@ const io = new Server(server, {
 
 const scenarioSchema = z.object({
   scenario: z.string().min(3),
-  sessionId: z.string().optional()
+  sessionId: z.string().optional(),
+  mode: z.enum(["simulation", "live-ai", "demo"]).optional()
 });
 
 const emitMatchEvent = (sessionId: string, payload: MatchEvent) => {
@@ -53,18 +56,58 @@ io.on("connection", (socket: Socket) => {
     }
 
     const sessionId = parsed.data.sessionId ?? `match_${Math.random().toString(36).slice(2, 9)}`;
-    const scenario = parsed.data.scenario.trim();
+    const inputScenario = parsed.data.scenario.trim();
+    const requestedMode = parsed.data.mode ?? "simulation";
+    const liveAiAvailable = Boolean(process.env.CLASH_LLM_API_KEY?.trim());
+    let resolvedMode: MatchMode = requestedMode === "live-ai" && liveAiAvailable ? "live-ai" : requestedMode === "demo" ? "demo" : "simulation";
+    let scenario = inputScenario;
 
     socket.join(sessionId);
+
+    let turns: ReturnType<typeof runConflictRound>["turns"];
+    let rebuttals: ReturnType<typeof runConflictRound>["rebuttals"];
+    let outcome: ReturnType<typeof runConflictRound>["outcome"];
+
+    if (resolvedMode === "demo") {
+      const demoRound = getDeterministicDemoRound();
+      scenario = demoRound.scenario;
+      turns = demoRound.turns;
+      rebuttals = demoRound.rebuttals;
+      outcome = demoRound.outcome;
+    } else if (resolvedMode === "live-ai") {
+      try {
+        const liveRound = await runLiveConflictRound(scenario);
+        turns = liveRound.turns;
+        rebuttals = liveRound.rebuttals;
+        outcome = liveRound.outcome;
+      } catch (error) {
+        resolvedMode = "simulation";
+        const fallbackRound = runConflictRound(scenario);
+        turns = fallbackRound.turns;
+        rebuttals = fallbackRound.rebuttals;
+        outcome = {
+          ...fallbackRound.outcome,
+          summary: `LIVE AI failed, simulation fallback used. ${fallbackRound.outcome.summary}`
+        };
+        socket.emit("match:warning", {
+          sessionId,
+          message: error instanceof Error ? error.message : "LIVE AI failed, fallback used"
+        });
+      }
+    } else {
+      const simulationRound = runConflictRound(scenario);
+      turns = simulationRound.turns;
+      rebuttals = simulationRound.rebuttals;
+      outcome = simulationRound.outcome;
+    }
 
     emitMatchEvent(sessionId, {
       type: "match_started",
       sessionId,
       scenario,
+      mode: resolvedMode,
       timestamp: Date.now()
     });
-
-    const { turns, rebuttals, outcome } = runConflictRound(scenario);
 
     const thinkingOrder = [...AGENTS].sort((a, b) => b.speed - a.speed);
 
@@ -76,7 +119,7 @@ io.on("connection", (socket: Socket) => {
           agentId: agent.id,
           timestamp: Date.now()
         });
-      }, index * 250 + Math.floor(Math.random() * 140));
+      }, index * 260 + 100);
     });
 
     turns.forEach((turn, index) => {
@@ -87,7 +130,7 @@ io.on("connection", (socket: Socket) => {
           turn,
           timestamp: Date.now()
         });
-      }, 700 + index * 520 + Math.floor(Math.random() * 260));
+      }, 760 + index * 560);
     });
 
     rebuttals.forEach((rebuttal, index) => {
@@ -100,17 +143,18 @@ io.on("connection", (socket: Socket) => {
           text: rebuttal.text,
           timestamp: Date.now()
         });
-      }, 2400 + index * 360 + Math.floor(Math.random() * 260));
+      }, 2480 + index * 390);
     });
 
     setTimeout(() => {
       emitMatchEvent(sessionId, {
         type: "outcome",
         sessionId,
+        mode: resolvedMode,
         ...outcome,
         timestamp: Date.now()
       });
-    }, 4600);
+    }, 4720);
   });
 });
 

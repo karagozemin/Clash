@@ -138,6 +138,12 @@ body {
   cursor: not-allowed;
 }
 
+.control-btn.mode-active {
+  border-color: #7c89db;
+  background: #1a2142;
+  box-shadow: 0 0 10px #7482de44;
+}
+
 .status-chip {
   color: #aeb9df;
   font-size: 0.78rem;
@@ -145,6 +151,16 @@ body {
   background: #121a31;
   border-radius: 999px;
   padding: 8px 12px;
+}
+
+.warning-chip {
+  margin: 10px 0 0;
+  color: #ffd8ba;
+  font-size: 0.8rem;
+  border: 1px solid #6e4b35;
+  background: #2b1a13;
+  border-radius: 10px;
+  padding: 8px 10px;
 }
 
 .timeline-scrubber {

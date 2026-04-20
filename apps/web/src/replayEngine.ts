@@ -1,8 +1,9 @@
-import type { AgentTurn, MatchEvent } from "./types";
+import type { AgentTurn, MatchEvent, MatchMode } from "./types";
 
 export type ReplayState = {
   sessionId: string;
   activeScenario: string;
+  mode: MatchMode | null;
   turns: Record<string, AgentTurn>;
   thinkingAgents: Set<string>;
   rebuttals: Array<{ agentId: string; targetAgentId: string; text: string }>;
@@ -44,6 +45,7 @@ export const resolveReplayState = (events: MatchEvent[], cursorMs: number): Repl
   const initial: ReplayState = {
     sessionId: "",
     activeScenario: "",
+    mode: null,
     turns: {},
     thinkingAgents: new Set<string>(),
     rebuttals: [],
@@ -69,6 +71,7 @@ export const resolveReplayState = (events: MatchEvent[], cursorMs: number): Repl
     if (event.type === "match_started") {
       initial.activeScenario = event.scenario;
       initial.sessionId = event.sessionId;
+      initial.mode = event.mode;
       continue;
     }
 
@@ -102,6 +105,7 @@ export const resolveReplayState = (events: MatchEvent[], cursorMs: number): Repl
     }
 
     initial.outcome = event;
+    initial.mode = event.mode;
   }
 
   return initial;
