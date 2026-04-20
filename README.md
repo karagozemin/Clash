@@ -88,6 +88,20 @@ Server variables for real LIVE AI mode:
 - `CLASH_LLM_MODEL`: Optional (default: `gpt-4o-mini`)
 - `CLASH_LLM_BASE_URL`: Optional OpenAI-compatible base URL (default: `https://api.openai.com/v1`)
 
+### Groq Setup (recommended for speed)
+
+Use these values in your root `.env`:
+
+```bash
+CLASH_LLM_API_KEY=your_groq_key
+CLASH_LLM_MODEL=llama-3.3-70b-versatile
+CLASH_LLM_BASE_URL=https://api.groq.com/openai/v1
+```
+
+Then start the app and select `LIVE AI` before `INITIATE CLASH`.
+
+Security note: never commit real API keys; keep them only in local `.env`.
+
 Create `apps/web/.env` if needed:
 
 ```bash

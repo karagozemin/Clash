@@ -15,6 +15,7 @@
     "test": "npm --workspace @clash/server run test"
   },
   "devDependencies": {
+    "dotenv": "^16.4.7",
     "npm-run-all": "^4.1.5"
   }
 }
