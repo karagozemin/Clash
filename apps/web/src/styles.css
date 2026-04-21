@@ -76,11 +76,53 @@ body {
   font-size: 1rem;
 }
 
+.watch-cta {
+  margin-top: 14px;
+  border: 1px solid #7d90ff;
+  border-radius: 14px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #8a94ff, #ff5da8);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  box-shadow: 0 0 18px #7f89ff66;
+}
+
+.value-statement {
+  margin-top: 14px;
+  border-color: #4a578a;
+  background: linear-gradient(180deg, #141b35, #101528);
+}
+
+.value-statement strong {
+  color: #e8edff;
+  font-size: 0.95rem;
+}
+
 .scenario-bar {
   margin-top: 22px;
   display: grid;
   grid-template-columns: 1fr auto auto;
   gap: 12px;
+}
+
+.watch-picks {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.watch-pick-btn {
+  border: 1px solid #4d5991;
+  background: #141a32;
+  color: #dfe5ff;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
 }
 
 .scenario-bar input {
@@ -358,6 +400,13 @@ body {
   gap: 8px;
 }
 
+.timeline-highlights {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .scenario-suggestions button {
   background: #111522;
   color: #aeb6d6;
@@ -443,12 +492,12 @@ body {
 }
 
 .agent-card.focused {
-  transform: scale(1.08);
+  transform: scale(1.11);
   opacity: 1;
   filter: brightness(1) blur(0px);
   box-shadow:
     0 0 0 1px #9aa7ff66,
-    0 0 26px #8b95ff52,
+    0 0 34px #8b95ff6f,
     inset 0 0 0 1px #c8d0ff1a;
   z-index: 2;
 }
@@ -464,9 +513,9 @@ body {
 }
 
 .agent-card.deemphasized {
-  opacity: 0.48;
-  filter: brightness(0.68) blur(2.8px);
-  transform: scale(0.97);
+  opacity: 0.32;
+  filter: brightness(0.55) blur(3.2px);
+  transform: scale(0.95);
   box-shadow: none !important;
 }
 

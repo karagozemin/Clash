@@ -2,12 +2,14 @@ import { motion } from "framer-motion";
 import type { MatchEvent } from "../types";
 
 type Marker = { event: MatchEvent; ratio: number };
+type Highlight = { label: string; atMs: number };
 
 type Props = {
   cursorMs: number;
   durationMs: number;
   isPlaying: boolean;
   markers: Marker[];
+  highlights: Highlight[];
   onSeek: (nextMs: number) => void;
   onReplay: () => void;
   onPlayPause: () => void;
@@ -35,7 +37,7 @@ const formatTime = (ms: number) => {
   return `${seconds}.${tenths}s`;
 };
 
-export function TimelineScrubber({ cursorMs, durationMs, isPlaying, markers, onSeek, onReplay, onPlayPause }: Props) {
+export function TimelineScrubber({ cursorMs, durationMs, isPlaying, markers, highlights, onSeek, onReplay, onPlayPause }: Props) {
   return (
     <div className="timeline-scrubber panel">
       <div className="panel-head">
@@ -78,6 +80,16 @@ export function TimelineScrubber({ cursorMs, durationMs, isPlaying, markers, onS
           REPLAY
         </button>
       </div>
+
+      {highlights.length > 0 && (
+        <div className="timeline-highlights">
+          {highlights.map((highlight) => (
+            <button key={highlight.label} className="control-btn" onClick={() => onSeek(highlight.atMs)}>
+              {highlight.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

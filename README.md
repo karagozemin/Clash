@@ -36,12 +36,14 @@ npm run dev
 
 ## Demo Controls (Web)
 
-- `RUN DEMO`: Loads a deterministic cinematic sequence with guaranteed disagreement and manipulation reveal.
+- `WATCH A CLASH`: One-click instant demo start with curated conflict scenarios (no typing).
 - `REPLAY TIMELINE`: Drag scrubber to seek forward/backward instantly; use `PLAY`, `PAUSE`, and `REPLAY`.
+- `REPLAY HIGHLIGHTS`: Jump to `FIRST CONFLICT`, `PEAK MANIPULATION`, and `FINAL OUTCOME`.
 - `LIVE SCENE`: Shows the currently speaking agent and stage progression in real time.
 - `CAMERA MODE`: Replay automatically focuses the active agent and de-emphasizes others.
 - `LIVE AI` / `SIMULATION`: Choose real model-backed agent generation or local deterministic simulation before `INITIATE CLASH`.
 - `EXPORT REPLAY JSON`: Saves the latest valid session timeline as a JSON file.
+- `SHARE THIS CLASH`: Creates a share-ready snippet with scenario, winner, and impact statement.
 
 ## Demo Runner (CLI)
 

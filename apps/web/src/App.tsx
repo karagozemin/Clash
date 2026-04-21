@@ -44,6 +44,12 @@ const initialScenarios = [
   "Trade this breakout opportunity"
 ];
 
+const curatedWatchScenarios = [
+  "Should I ape into this new meme coin?",
+  "Should I long ETH right now?",
+  "Should I launch this meme token?"
+];
+
 const decisionLabel: Record<Decision, string> = {
   BUY: "BUY",
   SELL: "SELL",
@@ -90,6 +96,7 @@ function App() {
   const [focusAgentId, setFocusAgentId] = useState<string | null>(null);
   const [focusBeat, setFocusBeat] = useState<"smooth" | "snap" | "aggressive" | "outcome">("smooth");
   const [isShaking, setIsShaking] = useState(false);
+  const [watchCursor, setWatchCursor] = useState(0);
 
   const soundEnabledRef = useRef(true);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -511,10 +518,28 @@ function App() {
       return;
     }
 
+    const selectedScenario = curatedWatchScenarios[watchCursor % curatedWatchScenarios.length];
+    setWatchCursor((previous) => (previous + 1) % curatedWatchScenarios.length);
+
     const demoSessionId = `demo_${Date.now().toString(36)}`;
     resetPlayback([], true);
     socket.emit("scenario:start", {
-      scenario: "demo",
+      scenario: selectedScenario,
+      sessionId: demoSessionId,
+      mode: "demo"
+    });
+  };
+
+  const runWatchScenario = (selectedScenario: string) => {
+    if (!socket) {
+      return;
+    }
+
+    const demoSessionId = `watch_${Date.now().toString(36)}`;
+    setScenario(selectedScenario);
+    resetPlayback([], true);
+    socket.emit("scenario:start", {
+      scenario: selectedScenario,
       sessionId: demoSessionId,
       mode: "demo"
     });
@@ -615,6 +640,82 @@ function App() {
     };
   }, [events]);
 
+  const replayHighlights = useMemo(() => {
+    if (events.length === 0) {
+      return [] as Array<{ label: string; atMs: number }>;
+    }
+
+    const firstConflict = events.find((event) => event.type === "agent_rebuttal" || event.type === "agent_escalation");
+    const peakManipulation = events.find(
+      (event) =>
+        (event.type === "agent_decision" && (event.turn.agentId === "manipulator" || event.turn.maliciousSignal)) ||
+        (event.type === "agent_escalation" && (event.agentId === "manipulator" || event.targetAgentId === "manipulator"))
+    );
+    const finalOutcome = events.find((event) => event.type === "outcome");
+
+    const markers = [
+      firstConflict ? { label: "FIRST CONFLICT", atMs: getRelativeTime(events, firstConflict.timestamp) } : null,
+      peakManipulation ? { label: "PEAK MANIPULATION", atMs: getRelativeTime(events, peakManipulation.timestamp) } : null,
+      finalOutcome ? { label: "FINAL OUTCOME", atMs: getRelativeTime(events, finalOutcome.timestamp) } : null
+    ].filter((item): item is { label: string; atMs: number } => Boolean(item));
+
+    const seen = new Set<string>();
+    return markers.filter((item) => {
+      if (seen.has(item.label)) {
+        return false;
+      }
+      seen.add(item.label);
+      return true;
+    });
+  }, [events]);
+
+  const outcomeSecondaryLine = useMemo(() => {
+    const outcome = replayState.outcome;
+    if (!outcome) {
+      return null;
+    }
+    if (outcome.winnerAgentId !== "manipulator") {
+      return `Prevented by: ${outcome.winnerAgentId}`;
+    }
+    return null;
+  }, [replayState.outcome]);
+
+  const shareClash = async () => {
+    if (!replayState.outcome || !replayState.activeScenario) {
+      return;
+    }
+
+    const text = [
+      `CLASH RESULT`,
+      `Scenario: ${replayState.activeScenario}`,
+      `Winner: ${replayState.outcome.winnerAgentId}`,
+      `Impact: ${replayState.outcome.impactStatement}`
+    ].join("\n");
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "CLASH Result",
+          text
+        });
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      }
+
+      appendLog({
+        level: "success",
+        text: "Share snippet ready.",
+        timestamp: Date.now()
+      });
+    } catch {
+      appendLog({
+        level: "warning",
+        text: "Share canceled or unavailable.",
+        timestamp: Date.now()
+      });
+    }
+  };
+
   const currentScene = useMemo(() => {
     const event = replayState.lastEvent;
     if (!event) {
@@ -685,12 +786,25 @@ function App() {
         <p className="eyebrow">REAL-TIME AI BATTLEGROUND</p>
         <h1>CLASH</h1>
         <p className="tagline">Where AI agents don’t agree — they compete.</p>
+        <button className="watch-cta" onClick={runDemo}>WATCH A CLASH</button>
       </header>
+
+      <section className="value-statement panel">
+        <strong>AI sounds convincing even when it’s wrong. CLASH shows that before it costs you.</strong>
+      </section>
 
       <section className="scenario-bar">
         <input value={scenario} onChange={(event) => setScenario(event.target.value)} placeholder="Enter a scenario..." />
         <button onClick={startClash}>INITIATE CLASH</button>
-        <button className="demo-btn" onClick={runDemo}>RUN DEMO</button>
+        <button className="demo-btn" onClick={runDemo}>WATCH NEXT CLASH</button>
+      </section>
+
+      <section className="watch-picks">
+        {curatedWatchScenarios.map((item) => (
+          <button key={item} className="watch-pick-btn" onClick={() => runWatchScenario(item)}>
+            {item}
+          </button>
+        ))}
       </section>
 
       <section className="controls-bar">
@@ -702,6 +816,9 @@ function App() {
         </button>
         <button className="control-btn" disabled={!latestReplayPayload} onClick={exportReplay}>
           EXPORT REPLAY JSON
+        </button>
+        <button className="control-btn" disabled={!replayState.outcome} onClick={() => void shareClash()}>
+          SHARE THIS CLASH
         </button>
         <span className="status-chip">
           {replayState.sessionId
@@ -726,6 +843,7 @@ function App() {
         durationMs={durationMs}
         isPlaying={isPlaying}
         markers={markers}
+        highlights={replayHighlights}
         onSeek={handleSeek}
         onReplay={handleReplay}
         onPlayPause={togglePlayPause}
@@ -887,8 +1005,8 @@ function App() {
             </button>
             <p>SYSTEM VERDICT</p>
             <h2>{replayState.outcome.winnerAgentId.toUpperCase()} WINS</h2>
-            <strong>{replayState.outcome.summary}</strong>
             <strong>{replayState.outcome.impactStatement}</strong>
+            {outcomeSecondaryLine && <strong>{outcomeSecondaryLine}</strong>}
             {replayState.outcome.manipulationDetected && <span>Manipulation attempt failed integrity checks.</span>}
           </motion.section>
         )}

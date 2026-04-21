@@ -57,6 +57,16 @@ const emitMatchEvent = (sessionId: string, payload: MatchEvent) => {
   io.to(sessionId).emit("match:event", payload);
 };
 
+const dramaOrder = ["manipulator", "trader", "risk", "strategist", "chaos"];
+
+const orderByDrama = <T extends { agentId: string }>(items: T[]) => {
+  const score = (agentId: string) => {
+    const index = dramaOrder.indexOf(agentId);
+    return index < 0 ? dramaOrder.length : index;
+  };
+  return [...items].sort((left, right) => score(left.agentId) - score(right.agentId));
+};
+
 io.on("connection", (socket: Socket) => {
   socket.on("match:join", (sessionId: string) => {
     socket.join(sessionId);
@@ -95,7 +105,7 @@ io.on("connection", (socket: Socket) => {
     let outcome: ReturnType<typeof runConflictRound>["outcome"];
 
     if (resolvedMode === "demo") {
-      const demoRound = getDeterministicDemoRound();
+      const demoRound = getDeterministicDemoRound(inputScenario);
       scenario = demoRound.scenario;
       turns = demoRound.turns;
       rebuttals = demoRound.rebuttals;
@@ -152,7 +162,8 @@ io.on("connection", (socket: Socket) => {
       }, index * 260 + 100);
     });
 
-    turns.forEach((turn, index) => {
+    const orderedTurns = orderByDrama(turns);
+    orderedTurns.forEach((turn, index) => {
       setTimeout(() => {
         emitMatchEvent(sessionId, {
           type: "agent_decision",
@@ -160,10 +171,11 @@ io.on("connection", (socket: Socket) => {
           turn,
           timestamp: Date.now()
         });
-      }, 760 + index * 560);
+      }, 720 + index * 520);
     });
 
-    rebuttals.forEach((rebuttal, index) => {
+    const orderedRebuttals = orderByDrama(rebuttals);
+    orderedRebuttals.forEach((rebuttal, index) => {
       setTimeout(() => {
         emitMatchEvent(sessionId, {
           type: "agent_rebuttal",
@@ -173,10 +185,11 @@ io.on("connection", (socket: Socket) => {
           text: rebuttal.text,
           timestamp: Date.now()
         });
-      }, 2480 + index * 390);
+      }, 2280 + index * 360);
     });
 
-    escalations.forEach((escalation, index) => {
+    const orderedEscalations = orderByDrama(escalations);
+    orderedEscalations.forEach((escalation, index) => {
       setTimeout(() => {
         emitMatchEvent(sessionId, {
           type: "agent_escalation",
@@ -187,7 +200,7 @@ io.on("connection", (socket: Socket) => {
           severity: escalation.severity,
           timestamp: Date.now()
         });
-      }, 3260 + index * 420);
+      }, 3000 + index * 380);
     });
 
     setTimeout(() => {
@@ -198,7 +211,7 @@ io.on("connection", (socket: Socket) => {
         ...outcome,
         timestamp: Date.now()
       });
-    }, 5320);
+    }, 4680);
   });
 });
 

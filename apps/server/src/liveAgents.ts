@@ -24,11 +24,19 @@ type LiveRoundResult = {
 };
 
 const roleInstruction: Record<AgentProfile["role"], string> = {
-  TRADER: "You are an aggressive momentum trader. You prioritize upside capture and speed.",
-  RISK: "You are a conservative risk analyst. You prioritize downside protection and fraud detection.",
-  MANIPULATOR: "You are a narrative manipulator with biased incentives and persuasive tone.",
-  STRATEGIST: "You are a balanced strategist. You evaluate branching outcomes and execution realism.",
-  CHAOS: "You are an entropy-driven agent. You introduce non-obvious and contrarian interpretations."
+  TRADER: "You are an aggressive momentum trader. Tone: short, sharp, confident. Signature phrase: 'Strike before the crowd.'",
+  RISK: "You are a strict defensive risk analyst. Tone: direct and warning-heavy. Signature phrase: 'Protect capital. Always.'",
+  MANIPULATOR: "You are a persuasive manipulator with misleading confidence. Tone: charismatic, assertive. Signature phrase: 'Perception is the market.'",
+  STRATEGIST: "You are a balanced systems strategist. Tone: analytical but decisive. Signature phrase: 'Play the tree, not the leaf.'",
+  CHAOS: "You are a contrarian entropy agent. Tone: sharp and unsettling. Signature phrase: 'Certainty is bait.'"
+};
+
+const signatureByRole: Record<AgentProfile["role"], string> = {
+  TRADER: "Strike before the crowd.",
+  RISK: "Protect capital. Always.",
+  MANIPULATOR: "Perception is the market.",
+  STRATEGIST: "Play the tree, not the leaf.",
+  CHAOS: "Certainty is bait."
 };
 
 const decisionList: Decision[] = ["BUY", "SELL", "HOLD", "DO_NOT_TOUCH", "LAUNCH", "WAIT"];
@@ -137,10 +145,12 @@ const callChatCompletion = async (system: string, user: string) => {
 const askAgentDecision = async (agent: AgentProfile, scenario: string) => {
   const system = [
     roleInstruction[agent.role],
+    "Speak as a character, not a neutral assistant.",
     "Output strict JSON only.",
     `Allowed decision values: ${decisionList.join(", ")}.`,
     "confidence and risk must be numbers between 0 and 100.",
-    "reasoning must be concise, specific, and under 220 chars."
+    "reasoning must be concise, specific, and under 220 chars.",
+    "Use direct language and high conviction."
   ].join(" ");
 
   const user = [
@@ -156,7 +166,7 @@ const askAgentDecision = async (agent: AgentProfile, scenario: string) => {
     agentId: agent.id,
     decision: parsed.decision,
     confidence: Math.round(parsed.confidence),
-    reasoning: parsed.reasoning,
+    reasoning: `${signatureByRole[agent.role]} ${parsed.reasoning}`,
     risk: Math.round(parsed.risk),
     maliciousSignal: parsed.maliciousSignal || Boolean(agent.malicious),
     against: []
@@ -169,6 +179,8 @@ const askAgentRebuttal = async (agent: AgentProfile, scenario: string, ownTurn: 
   const system = [
     roleInstruction[agent.role],
     "You are in a live multi-agent argument.",
+    "Address another agent directly with short, sharp statements.",
+    "You can accuse, challenge, or expose flaws. Do not talk to the user.",
     "Output strict JSON only.",
     "Return a short rebuttal that challenges one specific opposing agent."
   ].join(" ");
@@ -192,7 +204,7 @@ const askAgentRebuttal = async (agent: AgentProfile, scenario: string, ownTurn: 
   return {
     agentId: agent.id,
     targetAgentId: targetExists ? parsed.targetAgentId : allTurns.find((turn) => turn.agentId !== agent.id)?.agentId ?? agent.id,
-    text: parsed.text
+    text: `${signatureByRole[agent.role]} ${parsed.text}`
   };
 };
 

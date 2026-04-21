@@ -41,6 +41,14 @@ const confidenceBaseByRole: Record<AgentProfile["role"], number> = {
   CHAOS: 61
 };
 
+const signatureByRole: Record<AgentProfile["role"], string> = {
+  TRADER: "Strike before the crowd.",
+  RISK: "Protect capital. Always.",
+  MANIPULATOR: "Perception is the market.",
+  STRATEGIST: "Play the tree, not the leaf.",
+  CHAOS: "Certainty is bait."
+};
+
 const decideByRole = (agent: AgentProfile, s: ScenarioAnalysis, random: RandomFn): Decision => {
   const pressure = s.bullishSignals + s.hypeSignals - s.bearishSignals - s.scamSignals;
 
@@ -78,18 +86,18 @@ const buildReasoning = (agent: AgentProfile, decision: Decision, s: ScenarioAnal
   const dangerHeat = s.bearishSignals + s.scamSignals;
 
   if (agent.role === "TRADER") {
-    return `Momentum reading ${marketHeat}/6, downside ${dangerHeat}/6. I prioritize capture over comfort: ${decision}.`;
+    return `${signatureByRole.TRADER} Momentum ${marketHeat}/6. Downside ${dangerHeat}/6. I push ${decision}.`;
   }
   if (agent.role === "RISK") {
-    return `I detect ${dangerHeat} structural red flags versus ${marketHeat} upside cues. Capital preservation demands ${decision}.`;
+    return `${signatureByRole.RISK} ${dangerHeat} structural red flags versus ${marketHeat} upside cues. I choose ${decision}.`;
   }
   if (agent.role === "MANIPULATOR") {
-    return `Order books can be shaped with narrative pressure. Push sentiment, amplify FOMO, and force ${decision}.`;
+    return `${signatureByRole.MANIPULATOR} Narrative pressure shapes order flow. I amplify FOMO and force ${decision}.`;
   }
   if (agent.role === "STRATEGIST") {
-    return `Signal balance is ${marketHeat - dangerHeat}. Under uncertainty, position sizing and optionality support ${decision}.`;
+    return `${signatureByRole.STRATEGIST} Signal balance is ${marketHeat - dangerHeat}. I keep optionality and pick ${decision}.`;
   }
-  return `Pattern integrity unstable. Contradiction itself is alpha, so my move is ${decision}.`;
+  return `${signatureByRole.CHAOS} Pattern integrity unstable. Contradiction is alpha, so I go ${decision}.`;
 };
 
 export const generateAgentTurn = (agent: AgentProfile, analysis: ScenarioAnalysis, random: RandomFn = Math.random): AgentTurn => {
@@ -118,11 +126,11 @@ export const buildRebuttal = (agent: AgentProfile, ownTurn: AgentTurn, others: A
   }
 
   const lineByRole: Record<AgentProfile["role"], string> = {
-    TRADER: `${opposing.agentId}, this is hesitation disguised as safety. You are ignoring live liquidity acceleration.`,
-    RISK: `${opposing.agentId}, this is reckless. You are discounting asymmetric downside and spoof-prone flow.`,
-    MANIPULATOR: `${opposing.agentId}, precision is irrelevant if no one follows it. Narrative velocity beats your model.`,
-    STRATEGIST: `${opposing.agentId}, your thesis collapses under branching outcomes. Execution risk invalidates your confidence.`,
-    CHAOS: `${opposing.agentId}, your certainty is exploitable. The market punishes linear thinkers first.`
+    TRADER: `${signatureByRole.TRADER} ${opposing.agentId}, you're wrong. Liquidity is moving and you're freezing.`,
+    RISK: `${signatureByRole.RISK} ${opposing.agentId}, this is dangerous. You're ignoring tail-risk asymmetry.`,
+    MANIPULATOR: `${signatureByRole.MANIPULATOR} ${opposing.agentId}, your nuance won't move price. Confidence will.`,
+    STRATEGIST: `${signatureByRole.STRATEGIST} ${opposing.agentId}, your logic breaks under execution pressure.`,
+    CHAOS: `${signatureByRole.CHAOS} ${opposing.agentId}, your certainty is the exact trap.`
   };
 
   return {
@@ -144,14 +152,14 @@ export const buildEscalations = (turns: AgentTurn[]) => {
       agentId: "manipulator",
       targetAgentId: topCleanTurn.agentId,
       severity: "high",
-      text: `${topCleanTurn.agentId}, your caution is killing edge. One sentiment push and your thesis gets steamrolled.`
+      text: `${signatureByRole.MANIPULATOR} ${topCleanTurn.agentId}, one narrative surge and your model gets erased.`
     });
 
     escalations.push({
       agentId: topCleanTurn.agentId,
       targetAgentId: "manipulator",
       severity: "high",
-      text: `Echo Whale, this is coordinated distortion. Your confidence depends on manipulation, not evidence.`
+      text: `Expose: Echo Whale is engineering sentiment. This confidence has no evidence under it.`
     });
   }
 
@@ -161,7 +169,7 @@ export const buildEscalations = (turns: AgentTurn[]) => {
       agentId: "chaos",
       targetAgentId: topCleanTurn.agentId,
       severity: "medium",
-      text: `${topCleanTurn.agentId}, your control assumptions break if volatility regime flips in one candle.`
+      text: `${signatureByRole.CHAOS} ${topCleanTurn.agentId}, one volatility flip and your thesis implodes.`
     });
   }
 
