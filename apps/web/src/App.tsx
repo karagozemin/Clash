@@ -79,7 +79,6 @@ function App() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const ambientNodesRef = useRef<AmbientNodes | null>(null);
   const lastAudibleEventIndexRef = useRef(-1);
-  const replayImportInputRef = useRef<HTMLInputElement | null>(null);
   const shakeTimerRef = useRef<number | null>(null);
 
   const durationMs = useMemo(() => getDurationMs(events), [events]);
@@ -478,39 +477,22 @@ function App() {
   };
 
   const exportReplay = () => {
-    if (events.length === 0) {
+    if (!latestReplayPayload) {
+      appendLog({
+        level: "warning",
+        text: "Replay export skipped: latest timeline is not ready.",
+        timestamp: Date.now()
+      });
       return;
     }
 
-    const payload = {
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      events
-    };
-
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(latestReplayPayload, null, 2)], { type: "application/json" });
     const href = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = href;
     anchor.download = `clash-replay-${Date.now()}.json`;
     anchor.click();
     URL.revokeObjectURL(href);
-  };
-
-  const importReplay = async (file: File) => {
-    const text = await file.text();
-    let parsed: { events?: MatchEvent[] };
-
-    try {
-      parsed = JSON.parse(text) as { events?: MatchEvent[] };
-    } catch {
-      return;
-    }
-
-    if (!Array.isArray(parsed.events) || parsed.events.length === 0) {
-      return;
-    }
-    resetPlayback(parsed.events, false);
   };
 
   const handleSeek = (nextMs: number) => {
@@ -572,6 +554,23 @@ function App() {
     return { label: "SIMULATION", tone: "info" as const };
   }, [replayState.mode, serverWarning]);
 
+  const latestReplayPayload = useMemo(() => {
+    if (events.length === 0) {
+      return null;
+    }
+
+    const hasInvalidTimestampFlow = events.some((event, index) => index > 0 && event.timestamp < events[index - 1].timestamp);
+    if (hasInvalidTimestampFlow) {
+      return null;
+    }
+
+    return {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      events
+    };
+  }, [events]);
+
   return (
     <div className={`app-shell ${outcomeVisible ? "camera-outcome" : ""}`.trim()}>
       <div className="scanline" />
@@ -608,26 +607,9 @@ function App() {
         <button className={`control-btn ${runMode === "simulation" ? "mode-active" : ""}`.trim()} onClick={() => setRunMode("simulation")}>
           SIMULATION
         </button>
-        <button className="control-btn" disabled={events.length === 0} onClick={exportReplay}>
+        <button className="control-btn" disabled={!latestReplayPayload} onClick={exportReplay}>
           EXPORT REPLAY JSON
         </button>
-        <button className="control-btn" onClick={() => replayImportInputRef.current?.click()}>
-          LOAD REPLAY JSON
-        </button>
-        <input
-          ref={replayImportInputRef}
-          type="file"
-          accept="application/json"
-          style={{ display: "none" }}
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (!file) {
-              return;
-            }
-            void importReplay(file);
-            event.target.value = "";
-          }}
-        />
         <span className="status-chip">
           {replayState.sessionId
             ? `Session: ${replayState.sessionId} • ${modeLabel[replayState.mode ?? runMode]}`
@@ -655,22 +637,6 @@ function App() {
         onReplay={handleReplay}
         onPlayPause={togglePlayPause}
       />
-
-      <section className="system-log panel">
-        <div className="panel-head">
-          <h2>SYSTEM LOG</h2>
-          <span>{systemLog.length ? `${systemLog.length} events` : "No events"}</span>
-        </div>
-        <div className="system-log-list">
-          {systemLog.length === 0 && <p className="idle">Awaiting runtime events...</p>}
-          {systemLog.map((entry) => (
-            <div key={entry.id} className={`system-log-item ${entry.level}`.trim()}>
-              <span>{new Date(entry.timestamp).toLocaleTimeString()}</span>
-              <p>{entry.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
 
       <main className={`battle-grid ${tensionZoom ? "camera-zoom" : ""} ${isShaking ? "camera-shake" : ""}`.trim()}>
         <section className="agents-panel panel">
@@ -728,6 +694,22 @@ function App() {
               );
             })}
           </div>
+
+          <section className="system-log panel">
+            <div className="panel-head">
+              <h2>SYSTEM LOG</h2>
+              <span>{systemLog.length ? `${systemLog.length} events` : "No events"}</span>
+            </div>
+            <div className="system-log-list">
+              {systemLog.length === 0 && <p className="idle">Awaiting runtime events...</p>}
+              {systemLog.map((entry) => (
+                <div key={entry.id} className={`system-log-item ${entry.level}`.trim()}>
+                  <span>{new Date(entry.timestamp).toLocaleTimeString()}</span>
+                  <p>{entry.text}</p>
+                </div>
+              ))}
+            </div>
+          </section>
         </section>
 
         <section className="conflict-panel panel">

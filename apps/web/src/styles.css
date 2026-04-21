@@ -230,7 +230,7 @@ body {
 
 .timeline-track-wrap {
   position: relative;
-  padding: 6px 0 14px;
+  padding: 8px 0 22px;
 }
 
 .timeline-range {
@@ -267,15 +267,58 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  top: 18px;
+  top: 20px;
   pointer-events: none;
 }
 
 .timeline-marker {
   position: absolute;
   transform: translateX(-50%);
-  font-size: 0.88rem;
-  filter: drop-shadow(0 0 8px #8f9cff66);
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid #6370ac;
+  background: #2f395f;
+  box-shadow: 0 0 0 2px #0f1426, 0 0 12px #6f7dc355;
+}
+
+.timeline-marker.offset {
+  transform: translate(-50%, 4px);
+}
+
+.timeline-marker::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -10px;
+  width: 1px;
+  height: 9px;
+  transform: translateX(-50%);
+  background: #4a578a;
+}
+
+.timeline-marker-decision {
+  background: #8e99cd;
+  border-color: #9ba7db;
+}
+
+.timeline-marker-threat {
+  background: #ff8f52;
+  border-color: #ffb184;
+  box-shadow: 0 0 0 2px #0f1426, 0 0 14px #ff9f5b77;
+}
+
+.timeline-marker-rebuttal {
+  background: #7a87ff;
+  border-color: #9aa5ff;
+}
+
+.timeline-marker-outcome {
+  width: 12px;
+  height: 12px;
+  background: #55e1be;
+  border-color: #8af4db;
+  box-shadow: 0 0 0 2px #0f1426, 0 0 16px #6ef6d088;
 }
 
 .timeline-controls {

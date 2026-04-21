@@ -13,17 +13,17 @@ type Props = {
   onPlayPause: () => void;
 };
 
-const markerGlyph = (event: MatchEvent) => {
+const markerKind = (event: MatchEvent) => {
   if (event.type === "agent_decision") {
     if (event.turn.agentId === "manipulator" || event.turn.maliciousSignal) {
-      return "☠";
+      return "threat";
     }
-    return "⚡";
+    return "decision";
   }
   if (event.type === "agent_rebuttal") {
-    return "💥";
+    return "rebuttal";
   }
-  return "🏁";
+  return "outcome";
 };
 
 const formatTime = (ms: number) => {
@@ -56,15 +56,13 @@ export function TimelineScrubber({ cursorMs, durationMs, isPlaying, markers, onS
           {markers.map((marker, index) => (
             <motion.span
               key={`${marker.event.type}-${index}-${marker.event.timestamp}`}
-              className="timeline-marker"
+              className={`timeline-marker timeline-marker-${markerKind(marker.event)} ${index % 2 === 0 ? "" : "offset"}`.trim()}
               style={{ left: `${marker.ratio * 100}%` }}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.01 }}
               title={marker.event.type}
-            >
-              {markerGlyph(marker.event)}
-            </motion.span>
+            />
           ))}
         </div>
       </div>
