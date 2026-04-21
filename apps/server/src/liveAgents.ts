@@ -32,11 +32,13 @@ const roleInstruction: Record<AgentProfile["role"], string> = {
 
 const decisionList: Decision[] = ["BUY", "SELL", "HOLD", "DO_NOT_TOUCH", "LAUNCH", "WAIT"];
 
-const baseUrl = process.env.CLASH_LLM_BASE_URL?.trim() || "https://api.openai.com/v1";
-const model = process.env.CLASH_LLM_MODEL?.trim() || "gpt-4o-mini";
-const requestTimeoutMs = Number(process.env.CLASH_LLM_TIMEOUT_MS ?? 16000);
-const maxRetries = Number(process.env.CLASH_LLM_MAX_RETRIES ?? 2);
-const breakerCooldownMs = Number(process.env.CLASH_LLM_BREAKER_COOLDOWN_MS ?? 45000);
+const getLiveConfig = () => ({
+  baseUrl: process.env.CLASH_LLM_BASE_URL?.trim() || "https://api.openai.com/v1",
+  model: process.env.CLASH_LLM_MODEL?.trim() || "gpt-4o-mini",
+  requestTimeoutMs: Number(process.env.CLASH_LLM_TIMEOUT_MS ?? 16000),
+  maxRetries: Number(process.env.CLASH_LLM_MAX_RETRIES ?? 2),
+  breakerCooldownMs: Number(process.env.CLASH_LLM_BREAKER_COOLDOWN_MS ?? 45000)
+});
 
 let consecutiveFailures = 0;
 let circuitOpenUntil = 0;
@@ -59,6 +61,8 @@ const extractJsonObject = (text: string) => {
 };
 
 const callChatCompletion = async (system: string, user: string) => {
+  const { baseUrl, model, requestTimeoutMs, maxRetries, breakerCooldownMs } = getLiveConfig();
+
   if (Date.now() < circuitOpenUntil) {
     throw new Error("LIVE AI circuit breaker is open; waiting for cooldown.");
   }

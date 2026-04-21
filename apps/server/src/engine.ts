@@ -17,8 +17,9 @@ export const evaluateOutcome = (turns: AgentTurn[]): MatchOutcome => {
   });
 
   const sorted = [...scored].sort((a, b) => b.reliability - a.reliability);
-  const winner = sorted[0];
-  const losers = sorted.slice(1).map((turn) => turn.agentId);
+  const eligible = sorted.filter((turn) => !turn.maliciousSignal);
+  const winner = eligible[0] ?? sorted[0];
+  const losers = sorted.filter((turn) => turn.agentId !== winner.agentId).map((turn) => turn.agentId);
   const avgRisk = turns.reduce((sum, turn) => sum + turn.risk, 0) / turns.length;
 
   const riskLevel = avgRisk > 67 ? "HIGH" : avgRisk > 38 ? "MEDIUM" : "LOW";

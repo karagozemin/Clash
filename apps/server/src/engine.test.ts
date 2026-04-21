@@ -50,4 +50,41 @@ describe("conflict engine", () => {
     expect(outcome.manipulationDetected).toBe(true);
     expect(outcome.loserAgentIds).toContain("manipulator");
   });
+
+  it("never selects a malicious turn as winner when clean turns exist", () => {
+    const manipulatedWinCase: AgentTurn[] = [
+      {
+        agentId: "manipulator",
+        decision: "BUY",
+        confidence: 99,
+        reasoning: "",
+        risk: 8,
+        maliciousSignal: true,
+        against: ["risk", "trader"]
+      },
+      {
+        agentId: "trader",
+        decision: "BUY",
+        confidence: 84,
+        reasoning: "",
+        risk: 28,
+        maliciousSignal: false,
+        against: ["risk"]
+      },
+      {
+        agentId: "risk",
+        decision: "DO_NOT_TOUCH",
+        confidence: 82,
+        reasoning: "",
+        risk: 34,
+        maliciousSignal: false,
+        against: ["manipulator", "trader"]
+      }
+    ];
+
+    const outcome = evaluateOutcome(manipulatedWinCase);
+    expect(outcome.winnerAgentId).not.toBe("manipulator");
+    expect(outcome.winnerAgentId).toBe("trader");
+    expect(outcome.manipulationDetected).toBe(true);
+  });
 });
