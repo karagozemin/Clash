@@ -940,21 +940,7 @@ function App() {
   }, [replayState.lastEvent]);
 
   return (
-    <div
-      className={`app-shell ${outcomeVisible ? "camera-outcome" : ""}`.trim()}
-      onClickCapture={(event) => {
-        const target = event.target as HTMLElement;
-        const button = target.closest("button");
-        const watchActionAllowed = button?.classList.contains("watch-ungated");
-        if (!button || walletAddress || watchActionAllowed || button.classList.contains("wallet-float-btn") || button.closest(".wallet-popup")) {
-          return;
-        }
-
-        event.preventDefault();
-        event.stopPropagation();
-        ensureWalletConnected();
-      }}
-    >
+    <div className={`app-shell ${outcomeVisible ? "camera-outcome" : ""}`.trim()}>
       <div className="darkveil-layer">
         <DarkVeil hueShift={18} noiseIntensity={0.03} speed={2.15} scanlineIntensity={0.08} scanlineFrequency={1.5} warpAmount={0.28} />
       </div>
@@ -1017,7 +1003,7 @@ function App() {
         <p className="eyebrow">REAL-TIME AI BATTLEGROUND</p>
         <h1>VEIL</h1>
         <p className="tagline">Where AI agents don’t agree — they compete.</p>
-        <button className="watch-cta watch-ungated" onClick={runDemo}>WATCH A VEIL</button>
+        <button className="watch-cta" onClick={runDemo}>WATCH A VEIL</button>
       </header>
 
       <section className="value-statement panel">
@@ -1027,12 +1013,12 @@ function App() {
       <section className="scenario-bar">
         <input value={scenario} onChange={(event) => setScenario(event.target.value)} placeholder="Enter a scenario..." />
         <button onClick={startVeil}>INITIATE VEIL</button>
-        <button className="demo-btn watch-ungated" onClick={runDemo}>WATCH NEXT VEIL</button>
+        <button className="demo-btn" onClick={runDemo}>WATCH NEXT VEIL</button>
       </section>
 
       <section className="watch-picks">
         {curatedWatchScenarios.map((item) => (
-          <button key={item} className="watch-pick-btn watch-ungated" onClick={() => runWatchScenario(item)}>
+          <button key={item} className="watch-pick-btn" onClick={() => runWatchScenario(item)}>
             {item}
           </button>
         ))}
