@@ -1,12 +1,13 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { io, type Socket } from "socket.io-client";
+import { useAccount, useChainId } from "wagmi";
 import DarkVeil from "./components/DarkVeil";
 import { TimelineScrubber } from "./components/TimelineScrubber";
 import { narrationForEvent } from "./narration";
 import { getDurationMs, getEventMarkers, getRelativeTime, resolveReplayState } from "./replayEngine";
 import type { Decision, MatchEvent, MatchMode } from "./types";
-import { connectWalletConnect, type WalletEventProvider } from "./walletConnect";
 
 type AgentMeta = {
   id: string;
@@ -84,11 +85,14 @@ const sceneStageLabel = (event: MatchEvent | null) => {
 };
 
 const socketUrl = (import.meta as ImportMeta & { env: { VITE_VEIL_SERVER?: string } }).env.VITE_VEIL_SERVER ?? "http://localhost:8787";
-const walletConnectProjectId =
-  (import.meta as ImportMeta & { env: { VITE_WALLETCONNECT_PROJECT_ID?: string } }).env.VITE_WALLETCONNECT_PROJECT_ID ??
-  "e40e7554a29d019bedaad883896164a4";
 
 function App() {
+  const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const { openConnectModal } = useConnectModal();
+  const walletAddress = address ?? null;
+  const walletChainId = isConnected ? chainId : null;
+
   const [socket, setSocket] = useState<Socket | null>(null);
   const [scenario, setScenario] = useState(initialScenarios[0]);
   const [events, setEvents] = useState<MatchEvent[]>([]);
@@ -101,11 +105,8 @@ function App() {
   const [focusAgentId, setFocusAgentId] = useState<string | null>(null);
   const [focusBeat, setFocusBeat] = useState<"smooth" | "snap" | "aggressive" | "outcome">("smooth");
   const [isShaking, setIsShaking] = useState(false);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [walletChainId, setWalletChainId] = useState<string | null>(null);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [walletPopupOpen, setWalletPopupOpen] = useState(false);
-  const [walletProvider, setWalletProvider] = useState<WalletEventProvider | null>(null);
   const [llmProviderHint, setLlmProviderHint] = useState<string>("unknown");
 
   const soundEnabledRef = useRef(true);
@@ -127,26 +128,22 @@ function App() {
     });
   };
 
-  const getInjectedProvider = () => {
-    return (globalThis as typeof globalThis & { ethereum?: WalletEventProvider }).ethereum;
-  };
-
   const shortAddress = (value: string) => `${value.slice(0, 6)}...${value.slice(-4)}`;
 
-  const chainLabel = (chainId: string | null) => {
-    if (!chainId) {
+  const chainLabel = (currentChainId: number | null) => {
+    if (!currentChainId) {
       return "No chain";
     }
-    if (chainId === "0x38") {
+    if (currentChainId === 56) {
       return "BNB Chain";
     }
-    if (chainId === "0x1") {
+    if (currentChainId === 1) {
       return "Ethereum";
     }
-    if (chainId === "0x89") {
+    if (currentChainId === 137) {
       return "Polygon";
     }
-    return `Chain ${chainId}`;
+    return `Chain ${currentChainId}`;
   };
 
   const findEventIndexAtCursor = (nextCursorMs: number) => {
@@ -410,35 +407,11 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const provider = walletProvider;
-    if (!provider?.on || !provider.removeListener) {
-      return;
+    if (walletAddress && walletPopupOpen) {
+      setWalletPopupOpen(false);
+      setWalletError(null);
     }
-
-    const onAccountsChanged = (...args: unknown[]) => {
-      const nextAccounts = args[0] as string[] | undefined;
-      const account = nextAccounts?.[0] ?? null;
-      setWalletAddress(account);
-      if (!account) {
-        setWalletChainId(null);
-      }
-    };
-
-    const onChainChanged = (...args: unknown[]) => {
-      const nextChain = args[0] as string | undefined;
-      if (nextChain) {
-        setWalletChainId(nextChain);
-      }
-    };
-
-    provider.on("accountsChanged", onAccountsChanged);
-    provider.on("chainChanged", onChainChanged);
-
-    return () => {
-      provider.removeListener?.("accountsChanged", onAccountsChanged);
-      provider.removeListener?.("chainChanged", onChainChanged);
-    };
-  }, [walletProvider]);
+  }, [walletAddress, walletPopupOpen]);
 
   useEffect(() => {
     if (!isPlaying) {
@@ -648,44 +621,19 @@ function App() {
     });
   };
 
-  const connectWallet = async () => {
-    try {
-      setWalletError(null);
-      const injected = getInjectedProvider();
-
-      if (injected?.request) {
-        const accounts = (await injected.request({ method: "eth_requestAccounts" })) as string[];
-        const chain = (await injected.request({ method: "eth_chainId" })) as string;
-        setWalletAddress(accounts?.[0] ?? null);
-        setWalletChainId(chain ?? null);
-        setWalletPopupOpen(false);
-        setWalletProvider(injected);
-        appendLog({
-          level: "success",
-          text: "Injected wallet connected for Web3 context.",
-          timestamp: Date.now()
-        });
-        return;
-      }
-
-      const wc = await connectWalletConnect(walletConnectProjectId);
-      setWalletAddress(wc.account);
-      setWalletChainId(wc.chainId);
-      setWalletPopupOpen(false);
-      setWalletProvider(wc.provider);
-      appendLog({
-        level: "success",
-        text: "WalletConnect session established.",
-        timestamp: Date.now()
-      });
-    } catch {
-      setWalletError("Wallet connection rejected");
-      appendLog({
-        level: "warning",
-        text: "Wallet connection canceled.",
-        timestamp: Date.now()
-      });
+  const connectWallet = () => {
+    setWalletError(null);
+    if (openConnectModal) {
+      openConnectModal();
+      return;
     }
+
+    setWalletError("Wallet modal unavailable");
+    appendLog({
+      level: "warning",
+      text: "Wallet connection modal is unavailable.",
+      timestamp: Date.now()
+    });
   };
 
   const exportReplay = () => {
@@ -960,7 +908,7 @@ function App() {
         </motion.div>
       </AnimatePresence>
 
-      <button className="wallet-float-btn" onClick={() => void connectWallet()}>
+      <button className="wallet-float-btn" onClick={connectWallet}>
         {walletAddress ? "WALLET CONNECTED" : "CONNECT WALLET"}
       </button>
 
@@ -989,7 +937,7 @@ function App() {
                 <button className="control-btn" onClick={() => setWalletPopupOpen(false)}>
                   Close
                 </button>
-                <button className="watch-cta" onClick={() => void connectWallet()}>
+                <button className="watch-cta" onClick={connectWallet}>
                   CONNECT WALLET
                 </button>
               </div>
