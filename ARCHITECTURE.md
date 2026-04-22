@@ -123,9 +123,13 @@ flowchart TD
 Guarded operations include:
 
 - start scenario (`INITIATE VEIL`)
-- `WATCH A VEIL` / watch picks
 - replay export
 - share action
+
+Ungated demo operations:
+
+- `WATCH A VEIL` / `WATCH NEXT VEIL`
+- watch picks
 
 ## 6) Determinism Strategy
 

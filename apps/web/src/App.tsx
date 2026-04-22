@@ -620,7 +620,7 @@ function App() {
   };
 
   const runDemo = () => {
-    if (!ensureWalletConnected() || !socket) {
+    if (!socket) {
       return;
     }
 
@@ -634,7 +634,7 @@ function App() {
   };
 
   const runWatchScenario = (selectedScenario: string) => {
-    if (!ensureWalletConnected() || !socket) {
+    if (!socket) {
       return;
     }
 
@@ -945,7 +945,8 @@ function App() {
       onClickCapture={(event) => {
         const target = event.target as HTMLElement;
         const button = target.closest("button");
-        if (!button || walletAddress || button.classList.contains("wallet-float-btn") || button.closest(".wallet-popup")) {
+        const watchActionAllowed = button?.classList.contains("watch-ungated");
+        if (!button || walletAddress || watchActionAllowed || button.classList.contains("wallet-float-btn") || button.closest(".wallet-popup")) {
           return;
         }
 
@@ -1016,7 +1017,7 @@ function App() {
         <p className="eyebrow">REAL-TIME AI BATTLEGROUND</p>
         <h1>VEIL</h1>
         <p className="tagline">Where AI agents don’t agree — they compete.</p>
-        <button className="watch-cta" onClick={runDemo}>WATCH A VEIL</button>
+        <button className="watch-cta watch-ungated" onClick={runDemo}>WATCH A VEIL</button>
       </header>
 
       <section className="value-statement panel">
@@ -1026,12 +1027,12 @@ function App() {
       <section className="scenario-bar">
         <input value={scenario} onChange={(event) => setScenario(event.target.value)} placeholder="Enter a scenario..." />
         <button onClick={startVeil}>INITIATE VEIL</button>
-        <button className="demo-btn" onClick={runDemo}>WATCH NEXT VEIL</button>
+        <button className="demo-btn watch-ungated" onClick={runDemo}>WATCH NEXT VEIL</button>
       </section>
 
       <section className="watch-picks">
         {curatedWatchScenarios.map((item) => (
-          <button key={item} className="watch-pick-btn" onClick={() => runWatchScenario(item)}>
+          <button key={item} className="watch-pick-btn watch-ungated" onClick={() => runWatchScenario(item)}>
             {item}
           </button>
         ))}
