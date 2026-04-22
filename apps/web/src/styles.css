@@ -76,6 +76,50 @@ body {
   box-shadow: 0 0 12px #6f7edc55;
 }
 
+.wallet-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(7, 9, 16, 0.68);
+  backdrop-filter: blur(4px);
+}
+
+.wallet-popup {
+  width: min(460px, 100%);
+  border: 1px solid #3f4f88;
+  border-radius: 14px;
+  padding: 18px;
+  background: linear-gradient(180deg, #141d3b, #0f1528);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 18px rgba(108, 123, 255, 0.25);
+}
+
+.wallet-popup h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+}
+
+.wallet-popup p {
+  margin: 10px 0 0;
+  color: #cfd8ff;
+}
+
+.wallet-popup-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.wallet-popup-actions .watch-cta {
+  margin-top: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+
 .hero-logo {
   width: clamp(72px, 10vw, 120px);
   height: auto;

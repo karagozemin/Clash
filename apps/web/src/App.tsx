@@ -64,12 +64,6 @@ const decisionLabel: Record<Decision, string> = {
   WAIT: "WAIT"
 };
 
-const modeLabel: Record<MatchMode, string> = {
-  "live-ai": "LIVE AI",
-  simulation: "SIMULATION",
-  demo: "DEMO"
-};
-
 const sceneStageLabel = (event: MatchEvent | null) => {
   if (!event || event.type === "match_started" || event.type === "agent_thinking") {
     return "STAGE 1 · DECISION";
@@ -108,6 +102,7 @@ function App() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [walletChainId, setWalletChainId] = useState<string | null>(null);
   const [walletError, setWalletError] = useState<string | null>(null);
+  const [walletPopupOpen, setWalletPopupOpen] = useState(false);
   const [walletProvider, setWalletProvider] = useState<WalletEventProvider | null>(null);
   const [llmProviderHint, setLlmProviderHint] = useState<string>("unknown");
 
@@ -596,8 +591,24 @@ function App() {
     lastAudibleEventIndexRef.current = -1;
   };
 
+  const ensureWalletConnected = () => {
+    if (walletAddress) {
+      return true;
+    }
+
+    const message = "Please connect your wallet first.";
+    setWalletError(message);
+    setWalletPopupOpen(true);
+    appendLog({
+      level: "warning",
+      text: "Operation blocked: wallet connection required.",
+      timestamp: Date.now()
+    });
+    return false;
+  };
+
   const startVeil = () => {
-    if (!socket || scenario.trim().length < 3) {
+    if (!ensureWalletConnected() || !socket || scenario.trim().length < 3) {
       return;
     }
 
@@ -607,7 +618,7 @@ function App() {
   };
 
   const runDemo = () => {
-    if (!socket) {
+    if (!ensureWalletConnected() || !socket) {
       return;
     }
 
@@ -624,7 +635,7 @@ function App() {
   };
 
   const runWatchScenario = (selectedScenario: string) => {
-    if (!socket) {
+    if (!ensureWalletConnected() || !socket) {
       return;
     }
 
@@ -648,6 +659,7 @@ function App() {
         const chain = (await injected.request({ method: "eth_chainId" })) as string;
         setWalletAddress(accounts?.[0] ?? null);
         setWalletChainId(chain ?? null);
+        setWalletPopupOpen(false);
         setWalletProvider(injected);
         appendLog({
           level: "success",
@@ -660,6 +672,7 @@ function App() {
       const wc = await connectWalletConnect(walletConnectProjectId);
       setWalletAddress(wc.account);
       setWalletChainId(wc.chainId);
+      setWalletPopupOpen(false);
       setWalletProvider(wc.provider);
       appendLog({
         level: "success",
@@ -677,6 +690,10 @@ function App() {
   };
 
   const exportReplay = () => {
+    if (!ensureWalletConnected()) {
+      return;
+    }
+
     if (!latestReplayPayload) {
       appendLog({
         level: "warning",
@@ -733,26 +750,6 @@ function App() {
   const outcomeTakeover = Boolean(replayState.outcome && replayState.lastEvent?.type === "outcome");
   const outcomeVisible = Boolean(outcomeTakeover && replayState.outcome && dismissedOutcomeTimestamp !== replayState.outcome.timestamp);
   const tensionZoom = disagreementIndex >= 60 && !outcomeTakeover;
-
-  const runtimeStatus = useMemo(() => {
-    if (!replayState.mode) {
-      return { label: "IDLE", tone: "info" as const };
-    }
-
-    if (replayState.mode === "demo") {
-      return { label: "DEMO SCRIPT", tone: "info" as const };
-    }
-
-    if (replayState.mode === "live-ai") {
-      return { label: "LIVE VERIFIED", tone: "success" as const };
-    }
-
-    if (serverWarning) {
-      return { label: "FALLBACK SIMULATION", tone: "warning" as const };
-    }
-
-    return { label: "SIMULATION", tone: "info" as const };
-  }, [replayState.mode, serverWarning]);
 
   const latestReplayPayload = useMemo(() => {
     if (events.length === 0) {
@@ -859,7 +856,7 @@ function App() {
   }, [replayState.outcome]);
 
   const shareVeil = async () => {
-    if (!replayState.outcome || !replayState.activeScenario) {
+    if (!ensureWalletConnected() || !replayState.outcome || !replayState.activeScenario) {
       return;
     }
 
@@ -944,7 +941,20 @@ function App() {
   }, [replayState.lastEvent]);
 
   return (
-    <div className={`app-shell ${outcomeVisible ? "camera-outcome" : ""}`.trim()}>
+    <div
+      className={`app-shell ${outcomeVisible ? "camera-outcome" : ""}`.trim()}
+      onClickCapture={(event) => {
+        const target = event.target as HTMLElement;
+        const button = target.closest("button");
+        if (!button || walletAddress || button.classList.contains("wallet-float-btn") || button.closest(".wallet-popup")) {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        ensureWalletConnected();
+      }}
+    >
       <div className="scanline" />
 
       <AnimatePresence mode="wait">
@@ -963,6 +973,40 @@ function App() {
       <button className="wallet-float-btn" onClick={() => void connectWallet()}>
         {walletAddress ? "WALLET CONNECTED" : "CONNECT WALLET"}
       </button>
+
+      <AnimatePresence>
+        {walletPopupOpen && !walletAddress && (
+          <motion.div
+            className="wallet-popup-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+          >
+            <motion.section
+              className="wallet-popup"
+              initial={{ opacity: 0, y: 8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 6, scale: 0.98 }}
+              transition={{ duration: 0.2 }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Wallet required"
+            >
+              <h3>Wallet Required</h3>
+              <p>Please connect your wallet first.</p>
+              <div className="wallet-popup-actions">
+                <button className="control-btn" onClick={() => setWalletPopupOpen(false)}>
+                  Close
+                </button>
+                <button className="watch-cta" onClick={() => void connectWallet()}>
+                  CONNECT WALLET
+                </button>
+              </div>
+            </motion.section>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <header className="hero">
         <img className="hero-logo" src="/Veil-Logo.png" alt="VEIL logo" />
@@ -1003,14 +1047,6 @@ function App() {
         <button className="control-btn" disabled={!replayState.outcome} onClick={() => void shareVeil()}>
           SHARE THIS VEIL
         </button>
-        <span className="status-chip">
-          {replayState.sessionId
-            ? `Session: ${replayState.sessionId} • ${modeLabel[replayState.mode ?? runMode]}`
-            : `No active session • ${modeLabel[runMode]}`}
-        </span>
-        <span className="status-chip">Gateway: {providerBadge}</span>
-        <span className="status-chip">{walletAddress ? `${shortAddress(walletAddress)} • ${chainLabel(walletChainId)}` : "Wallet not connected"}</span>
-        <span className={`verify-badge ${runtimeStatus.tone}`.trim()}>{runtimeStatus.label}</span>
       </section>
 
       {walletError && <p className="warning-chip">{walletError}</p>}

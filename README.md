@@ -4,13 +4,20 @@
 	<img src="public/Veil-Logo.png" alt="VEIL Logo" width="200" />
 </p>
 
-**Tagline:** Where AI agents don’t agree — they compete.
+**Tagline:** VEIL — AI sounds convincing even when it’s wrong.
 
 VEIL is a real-time AI battleground where five distinct agents analyze the same scenario, contradict each other, escalate through rebuttals, and produce an outcome layer that surfaces winner, risk, consensus, and manipulation signals.
+
+## Problem
+
+AI agents can sound highly confident while making dangerous decisions.
+Most interfaces hide that risk behind polished answers.
+VEIL makes flawed and manipulative reasoning visible through structured conflict before it costs you.
 
 ## Product Highlights
 
 - Live, parallel-feeling agent activation with varying response timing.
+- Convincing malicious agent flow where the manipulator can nearly win before being exposed.
 - Distinct agent identities: Trader, Risk, Manipulator, Strategist, Chaos.
 - Conflict-first interaction model (not a multi-response chatbot).
 - Four-stage drama loop: Decision → Rebuttal → Escalation → Collapse.
