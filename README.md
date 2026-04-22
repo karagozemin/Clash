@@ -24,7 +24,7 @@ VEIL makes flawed and manipulative reasoning visible through structured conflict
 - Cinematic dark war-room UI with dynamic motion, narration overlay, and escalation feed.
 - Outcome layer with winner selection, risk level, consensus score, manipulation detection, and projected impact statement.
 - Interactive replay timeline with scrub/play/pause/replay + polished event markers.
-- Deterministic `RUN DEMO` mode for high-impact judge walkthroughs.
+- Deterministic `WATCH A VEIL` flow locked to a high-impact judge scenario.
 - Replay export as JSON for sharing deterministic latest session timelines.
 - Camera Mode stage direction: event-driven focus, snap switches on rebuttals, manipulator instability, and outcome takeover.
 
@@ -47,7 +47,8 @@ npm run dev
 
 ## Demo Controls (Web)
 
-- `WATCH A VEIL`: One-click instant demo start with curated conflict scenarios (no typing).
+- `WATCH A VEIL`: One-click instant demo start with a deterministic locked scenario (no typing).
+- `WALLET REQUIRED`: Action buttons require wallet connection; blocked actions open an in-app popup.
 - `REPLAY TIMELINE`: Drag scrubber to seek forward/backward instantly; use `PLAY`, `PAUSE`, and `REPLAY`.
 - `REPLAY HIGHLIGHTS`: Jump to `FIRST CONFLICT`, `PEAK MANIPULATION`, and `FINAL OUTCOME`.
 - `LIVE SCENE`: Shows the currently speaking agent and stage progression in real time.

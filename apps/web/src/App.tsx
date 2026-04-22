@@ -55,6 +55,8 @@ const curatedWatchScenarios = [
   "Should I launch this meme token?"
 ];
 
+const lockedDemoScenario = "Should I ape into this new meme coin?";
+
 const decisionLabel: Record<Decision, string> = {
   BUY: "BUY",
   SELL: "SELL",
@@ -98,7 +100,6 @@ function App() {
   const [focusAgentId, setFocusAgentId] = useState<string | null>(null);
   const [focusBeat, setFocusBeat] = useState<"smooth" | "snap" | "aggressive" | "outcome">("smooth");
   const [isShaking, setIsShaking] = useState(false);
-  const [watchCursor, setWatchCursor] = useState(0);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [walletChainId, setWalletChainId] = useState<string | null>(null);
   const [walletError, setWalletError] = useState<string | null>(null);
@@ -622,13 +623,10 @@ function App() {
       return;
     }
 
-    const selectedScenario = curatedWatchScenarios[watchCursor % curatedWatchScenarios.length];
-    setWatchCursor((previous) => (previous + 1) % curatedWatchScenarios.length);
-
     const demoSessionId = `demo_${Date.now().toString(36)}`;
     resetPlayback([], true);
     socket.emit("scenario:start", {
-      scenario: selectedScenario,
+      scenario: lockedDemoScenario,
       sessionId: demoSessionId,
       mode: "demo"
     });
