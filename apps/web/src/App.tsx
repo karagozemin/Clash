@@ -29,6 +29,16 @@ type SystemLogEntry = {
   timestamp: number;
 };
 
+type EthereumProvider = {
+  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+  on?: (event: string, listener: (...args: unknown[]) => void) => void;
+  removeListener?: (event: string, listener: (...args: unknown[]) => void) => void;
+};
+
+type HealthPayload = {
+  llmProviderHint?: string;
+};
+
 const AGENTS: AgentMeta[] = [
   { id: "trader", name: "Vortex Trader", role: "Aggression Engine", color: "#16f2a5", vibe: "Momentum hunter" },
   { id: "risk", name: "Sentinel Risk", role: "Capital Guardian", color: "#ff5d7a", vibe: "Defensive firewall" },
@@ -97,6 +107,10 @@ function App() {
   const [focusBeat, setFocusBeat] = useState<"smooth" | "snap" | "aggressive" | "outcome">("smooth");
   const [isShaking, setIsShaking] = useState(false);
   const [watchCursor, setWatchCursor] = useState(0);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [walletChainId, setWalletChainId] = useState<string | null>(null);
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const [llmProviderHint, setLlmProviderHint] = useState<string>("unknown");
 
   const soundEnabledRef = useRef(true);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -115,6 +129,28 @@ function App() {
       const next = [...previous, { id: `${entry.timestamp}-${previous.length}`, ...entry }];
       return next.slice(-18);
     });
+  };
+
+  const getEthereumProvider = () => {
+    return (globalThis as typeof globalThis & { ethereum?: EthereumProvider }).ethereum;
+  };
+
+  const shortAddress = (value: string) => `${value.slice(0, 6)}...${value.slice(-4)}`;
+
+  const chainLabel = (chainId: string | null) => {
+    if (!chainId) {
+      return "No chain";
+    }
+    if (chainId === "0x38") {
+      return "BNB Chain";
+    }
+    if (chainId === "0x1") {
+      return "Ethereum";
+    }
+    if (chainId === "0x89") {
+      return "Polygon";
+    }
+    return `Chain ${chainId}`;
   };
 
   const findEventIndexAtCursor = (nextCursorMs: number) => {
@@ -351,6 +387,64 @@ function App() {
   }, []);
 
   useEffect(() => {
+    let disposed = false;
+
+    const loadHealth = async () => {
+      try {
+        const response = await fetch(`${socketUrl}/health`);
+        if (!response.ok || disposed) {
+          return;
+        }
+        const payload = (await response.json()) as HealthPayload;
+        if (!disposed) {
+          setLlmProviderHint(payload.llmProviderHint ?? "unknown");
+        }
+      } catch {
+        if (!disposed) {
+          setLlmProviderHint("unreachable");
+        }
+      }
+    };
+
+    void loadHealth();
+
+    return () => {
+      disposed = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const provider = getEthereumProvider();
+    if (!provider?.on || !provider.request || !provider.removeListener) {
+      return;
+    }
+
+    const onAccountsChanged = (...args: unknown[]) => {
+      const nextAccounts = args[0] as string[] | undefined;
+      const account = nextAccounts?.[0] ?? null;
+      setWalletAddress(account);
+      if (!account) {
+        setWalletChainId(null);
+      }
+    };
+
+    const onChainChanged = (...args: unknown[]) => {
+      const nextChain = args[0] as string | undefined;
+      if (nextChain) {
+        setWalletChainId(nextChain);
+      }
+    };
+
+    provider.on("accountsChanged", onAccountsChanged);
+    provider.on("chainChanged", onChainChanged);
+
+    return () => {
+      provider.removeListener?.("accountsChanged", onAccountsChanged);
+      provider.removeListener?.("chainChanged", onChainChanged);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isPlaying) {
       syncAmbient(false);
       return;
@@ -545,6 +639,39 @@ function App() {
     });
   };
 
+  const connectWallet = async () => {
+    const provider = getEthereumProvider();
+    if (!provider?.request) {
+      setWalletError("No injected wallet found");
+      appendLog({
+        level: "warning",
+        text: "Wallet not detected for Pieverse layer.",
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    try {
+      setWalletError(null);
+      const accounts = (await provider.request({ method: "eth_requestAccounts" })) as string[];
+      const chain = (await provider.request({ method: "eth_chainId" })) as string;
+      setWalletAddress(accounts?.[0] ?? null);
+      setWalletChainId(chain ?? null);
+      appendLog({
+        level: "success",
+        text: "Wallet connected for Web3 context.",
+        timestamp: Date.now()
+      });
+    } catch {
+      setWalletError("Wallet connection rejected");
+      appendLog({
+        level: "warning",
+        text: "Wallet connection canceled.",
+        timestamp: Date.now()
+      });
+    }
+  };
+
   const exportReplay = () => {
     if (!latestReplayPayload) {
       appendLog({
@@ -639,6 +766,53 @@ function App() {
       events
     };
   }, [events]);
+
+  const providerBadge = useMemo(() => {
+    if (llmProviderHint === "dgrid") {
+      return "DGRID GATEWAY";
+    }
+    if (llmProviderHint === "groq") {
+      return "GROQ GATEWAY";
+    }
+    if (llmProviderHint === "openai") {
+      return "OPENAI-COMPAT";
+    }
+    if (llmProviderHint === "unreachable") {
+      return "GATEWAY OFFLINE";
+    }
+    return "CUSTOM GATEWAY";
+  }, [llmProviderHint]);
+
+  const myxPerpSignal = useMemo(() => {
+    const outcome = replayState.outcome;
+    if (!outcome) {
+      return null;
+    }
+
+    const winnerTurn = replayState.turns[outcome.winnerAgentId];
+    const winnerDecision = winnerTurn?.decision;
+    let action = "NO-TRADE";
+
+    if (winnerDecision === "BUY" || winnerDecision === "LAUNCH") {
+      action = "LONG";
+    } else if (winnerDecision === "SELL") {
+      action = "SHORT";
+    }
+
+    if (outcome.manipulationDetected && outcome.riskLevel === "HIGH") {
+      action = "NO-TRADE";
+    }
+
+    const leverage = outcome.riskLevel === "LOW" ? "3x" : outcome.riskLevel === "MEDIUM" ? "2x" : "1x";
+    const stopLoss = outcome.riskLevel === "LOW" ? "3.4%" : outcome.riskLevel === "MEDIUM" ? "2.6%" : "1.8%";
+
+    return {
+      action,
+      leverage,
+      stopLoss,
+      confidence: `${Math.max(35, outcome.consensusScore)}%`
+    };
+  }, [replayState.outcome, replayState.turns]);
 
   const replayHighlights = useMemo(() => {
     if (events.length === 0) {
@@ -820,13 +994,20 @@ function App() {
         <button className="control-btn" disabled={!replayState.outcome} onClick={() => void shareClash()}>
           SHARE THIS CLASH
         </button>
+        <button className="control-btn" onClick={() => void connectWallet()}>
+          {walletAddress ? "WALLET CONNECTED" : "CONNECT WALLET"}
+        </button>
         <span className="status-chip">
           {replayState.sessionId
             ? `Session: ${replayState.sessionId} • ${modeLabel[replayState.mode ?? runMode]}`
             : `No active session • ${modeLabel[runMode]}`}
         </span>
+        <span className="status-chip">Gateway: {providerBadge}</span>
+        <span className="status-chip">{walletAddress ? `${shortAddress(walletAddress)} • ${chainLabel(walletChainId)}` : "Wallet not connected"}</span>
         <span className={`verify-badge ${runtimeStatus.tone}`.trim()}>{runtimeStatus.label}</span>
       </section>
+
+      {walletError && <p className="warning-chip">{walletError}</p>}
 
       {serverWarning && <p className="warning-chip">{serverWarning}</p>}
 
@@ -1043,6 +1224,29 @@ function App() {
               <p className="manipulation-warning">This agent attempted to manipulate the decision.</p>
             )}
             <p className="summary">{replayState.outcome.summary}</p>
+
+            <section className="sponsor-fit-grid">
+              <article className="sponsor-fit-card myx">
+                <h4>MYX · PERP SIGNAL</h4>
+                {myxPerpSignal ? (
+                  <p>
+                    {myxPerpSignal.action} · {myxPerpSignal.leverage} · SL {myxPerpSignal.stopLoss} · CONF {myxPerpSignal.confidence}
+                  </p>
+                ) : (
+                  <p>Awaiting outcome to produce a signal.</p>
+                )}
+              </article>
+
+              <article className="sponsor-fit-card pieverse">
+                <h4>PIEVERSE · WEB3 CONTEXT</h4>
+                <p>{walletAddress ? `${shortAddress(walletAddress)} on ${chainLabel(walletChainId)}` : "Connect wallet to attach chain context."}</p>
+              </article>
+
+              <article className="sponsor-fit-card dgrid">
+                <h4>DGRID · LLM GATEWAY</h4>
+                <p>Provider route: {providerBadge}</p>
+              </article>
+            </section>
           </div>
         ) : (
           <p className="idle">Run a scenario to reveal who collapses under pressure.</p>

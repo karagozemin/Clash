@@ -728,6 +728,46 @@ body {
   font-size: 0.95rem !important;
 }
 
+.sponsor-fit-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.sponsor-fit-card {
+  border: 1px solid #37406a;
+  background: #11172c;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.sponsor-fit-card h4 {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.11em;
+  color: #b6c2f8;
+}
+
+.sponsor-fit-card p {
+  margin-top: 7px;
+  font-size: 0.8rem;
+  color: #d4ddff;
+}
+
+.sponsor-fit-card.myx {
+  border-color: #2f6a5d;
+}
+
+.sponsor-fit-card.pieverse {
+  border-color: #5d4d7f;
+}
+
+.sponsor-fit-card.dgrid {
+  border-color: #406a84;
+}
+
 .manipulation-warning {
   grid-column: 1 / -1;
   margin: 0 !important;
@@ -888,6 +928,10 @@ body {
 
   .outcome-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sponsor-fit-grid {
+    grid-template-columns: 1fr;
   }
 
   .scenario-bar {

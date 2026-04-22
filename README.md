@@ -102,6 +102,20 @@ GitHub Actions CI is configured in `.github/workflows/ci.yml` and runs:
 - `apps/web/src/narration.ts`: Event-driven cinematic narration mapping
 - `apps/web/src/styles.css`: Visual identity and animation styling
 
+## Sponsor Fit (Bounty Mapping)
+
+- `MYX` (AI-Driven Liquidity / Autonomous Trading):
+	- CLASH now emits a derived `MYX · PERP SIGNAL` card after each clash (`LONG/SHORT/NO-TRADE`, leverage, stop-loss, confidence).
+	- This turns multi-agent conflict output into an actionable trading signal layer.
+
+- `Pieverse` (Web3 Skills):
+	- CLASH includes wallet connection and chain context in-session (`CONNECT WALLET`, address + chain shown in UI).
+	- This binds AI conflict outputs to a Web3-native runtime context.
+
+- `DGrid` (Unified LLM Access):
+	- CLASH uses OpenAI-compatible gateway routing through `CLASH_LLM_BASE_URL`.
+	- `/health` now exposes `llmProviderHint` (e.g., `dgrid`) to prove gateway wiring at runtime.
+
 ## Environment
 
 Optional override for web socket endpoint:
@@ -128,6 +142,24 @@ CLASH_LLM_BASE_URL=https://api.groq.com/openai/v1
 ```
 
 Then start the app and select `LIVE AI` before `INITIATE CLASH`.
+
+### DGrid Setup (for DGrid bounty)
+
+Use these values in your root `.env`:
+
+```bash
+CLASH_LLM_API_KEY=your_dgrid_key
+CLASH_LLM_MODEL=your_dgrid_model
+CLASH_LLM_BASE_URL=https://your-dgrid-openai-compatible-endpoint
+```
+
+Verify gateway hint in server health:
+
+```bash
+curl http://localhost:8787/health
+```
+
+Expected field: `llmProviderHint` (shows `dgrid` when URL contains dgrid).
 
 Security note: never commit real API keys; keep them only in local `.env`.
 

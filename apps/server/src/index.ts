@@ -22,6 +22,23 @@ const repositoryRoot = path.resolve(currentDir, "../../..");
 dotenvConfig();
 dotenvConfig({ path: path.join(repositoryRoot, ".env"), override: false });
 
+const detectLlmProviderHint = () => {
+  const baseUrl = process.env.CLASH_LLM_BASE_URL?.trim().toLowerCase() ?? "";
+  if (!baseUrl) {
+    return "default-openai-compatible";
+  }
+  if (baseUrl.includes("dgrid")) {
+    return "dgrid";
+  }
+  if (baseUrl.includes("groq")) {
+    return "groq";
+  }
+  if (baseUrl.includes("openai")) {
+    return "openai";
+  }
+  return "custom-openai-compatible";
+};
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -32,7 +49,8 @@ app.get("/health", (_req: Request, res: Response) => {
     service: "clash-server",
     liveAiConfigured: Boolean(process.env.CLASH_LLM_API_KEY?.trim()),
     llmBaseUrlConfigured: Boolean(process.env.CLASH_LLM_BASE_URL?.trim()),
-    llmModelConfigured: Boolean(process.env.CLASH_LLM_MODEL?.trim())
+    llmModelConfigured: Boolean(process.env.CLASH_LLM_MODEL?.trim()),
+    llmProviderHint: detectLlmProviderHint()
   });
 });
 
