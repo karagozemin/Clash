@@ -5,6 +5,7 @@ import { TimelineScrubber } from "./components/TimelineScrubber";
 import { narrationForEvent } from "./narration";
 import { getDurationMs, getEventMarkers, getRelativeTime, resolveReplayState } from "./replayEngine";
 import type { Decision, MatchEvent, MatchMode } from "./types";
+import { connectWalletConnect, type WalletEventProvider } from "./walletConnect";
 
 type AgentMeta = {
   id: string;
@@ -27,12 +28,6 @@ type SystemLogEntry = {
   level: SystemLogLevel;
   text: string;
   timestamp: number;
-};
-
-type EthereumProvider = {
-  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-  on?: (event: string, listener: (...args: unknown[]) => void) => void;
-  removeListener?: (event: string, listener: (...args: unknown[]) => void) => void;
 };
 
 type HealthPayload = {
@@ -91,7 +86,10 @@ const sceneStageLabel = (event: MatchEvent | null) => {
   return "STAGE 4 · COLLAPSE";
 };
 
-const socketUrl = (import.meta as ImportMeta & { env: { VITE_CLASH_SERVER?: string } }).env.VITE_CLASH_SERVER ?? "http://localhost:8787";
+const socketUrl = (import.meta as ImportMeta & { env: { VITE_VEIL_SERVER?: string } }).env.VITE_VEIL_SERVER ?? "http://localhost:8787";
+const walletConnectProjectId =
+  (import.meta as ImportMeta & { env: { VITE_WALLETCONNECT_PROJECT_ID?: string } }).env.VITE_WALLETCONNECT_PROJECT_ID ??
+  "e40e7554a29d019bedaad883896164a4";
 
 function App() {
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -110,6 +108,7 @@ function App() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [walletChainId, setWalletChainId] = useState<string | null>(null);
   const [walletError, setWalletError] = useState<string | null>(null);
+  const [walletProvider, setWalletProvider] = useState<WalletEventProvider | null>(null);
   const [llmProviderHint, setLlmProviderHint] = useState<string>("unknown");
 
   const soundEnabledRef = useRef(true);
@@ -131,8 +130,8 @@ function App() {
     });
   };
 
-  const getEthereumProvider = () => {
-    return (globalThis as typeof globalThis & { ethereum?: EthereumProvider }).ethereum;
+  const getInjectedProvider = () => {
+    return (globalThis as typeof globalThis & { ethereum?: WalletEventProvider }).ethereum;
   };
 
   const shortAddress = (value: string) => `${value.slice(0, 6)}...${value.slice(-4)}`;
@@ -414,8 +413,8 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const provider = getEthereumProvider();
-    if (!provider?.on || !provider.request || !provider.removeListener) {
+    const provider = walletProvider;
+    if (!provider?.on || !provider.removeListener) {
       return;
     }
 
@@ -442,7 +441,7 @@ function App() {
       provider.removeListener?.("accountsChanged", onAccountsChanged);
       provider.removeListener?.("chainChanged", onChainChanged);
     };
-  }, []);
+  }, [walletProvider]);
 
   useEffect(() => {
     if (!isPlaying) {
@@ -597,7 +596,7 @@ function App() {
     lastAudibleEventIndexRef.current = -1;
   };
 
-  const startClash = () => {
+  const startVeil = () => {
     if (!socket || scenario.trim().length < 3) {
       return;
     }
@@ -640,26 +639,31 @@ function App() {
   };
 
   const connectWallet = async () => {
-    const provider = getEthereumProvider();
-    if (!provider?.request) {
-      setWalletError("No injected wallet found");
-      appendLog({
-        level: "warning",
-        text: "Wallet not detected for Pieverse layer.",
-        timestamp: Date.now()
-      });
-      return;
-    }
-
     try {
       setWalletError(null);
-      const accounts = (await provider.request({ method: "eth_requestAccounts" })) as string[];
-      const chain = (await provider.request({ method: "eth_chainId" })) as string;
-      setWalletAddress(accounts?.[0] ?? null);
-      setWalletChainId(chain ?? null);
+      const injected = getInjectedProvider();
+
+      if (injected?.request) {
+        const accounts = (await injected.request({ method: "eth_requestAccounts" })) as string[];
+        const chain = (await injected.request({ method: "eth_chainId" })) as string;
+        setWalletAddress(accounts?.[0] ?? null);
+        setWalletChainId(chain ?? null);
+        setWalletProvider(injected);
+        appendLog({
+          level: "success",
+          text: "Injected wallet connected for Web3 context.",
+          timestamp: Date.now()
+        });
+        return;
+      }
+
+      const wc = await connectWalletConnect(walletConnectProjectId);
+      setWalletAddress(wc.account);
+      setWalletChainId(wc.chainId);
+      setWalletProvider(wc.provider);
       appendLog({
         level: "success",
-        text: "Wallet connected for Web3 context.",
+        text: "WalletConnect session established.",
         timestamp: Date.now()
       });
     } catch {
@@ -686,7 +690,7 @@ function App() {
     const href = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = href;
-    anchor.download = `clash-replay-${Date.now()}.json`;
+    anchor.download = `veil-replay-${Date.now()}.json`;
     anchor.click();
     URL.revokeObjectURL(href);
   };
@@ -854,13 +858,13 @@ function App() {
     return null;
   }, [replayState.outcome]);
 
-  const shareClash = async () => {
+  const shareVeil = async () => {
     if (!replayState.outcome || !replayState.activeScenario) {
       return;
     }
 
     const text = [
-      `CLASH RESULT`,
+      `VEIL RESULT`,
       `Scenario: ${replayState.activeScenario}`,
       `Winner: ${replayState.outcome.winnerAgentId}`,
       `Impact: ${replayState.outcome.impactStatement}`
@@ -869,7 +873,7 @@ function App() {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: "CLASH Result",
+          title: "VEIL Result",
           text
         });
       } else if (navigator.clipboard?.writeText) {
@@ -956,21 +960,26 @@ function App() {
         </motion.div>
       </AnimatePresence>
 
+      <button className="wallet-float-btn" onClick={() => void connectWallet()}>
+        {walletAddress ? "WALLET CONNECTED" : "CONNECT WALLET"}
+      </button>
+
       <header className="hero">
+        <img className="hero-logo" src="/Veil-Logo.png" alt="VEIL logo" />
         <p className="eyebrow">REAL-TIME AI BATTLEGROUND</p>
-        <h1>CLASH</h1>
+        <h1>VEIL</h1>
         <p className="tagline">Where AI agents don’t agree — they compete.</p>
-        <button className="watch-cta" onClick={runDemo}>WATCH A CLASH</button>
+        <button className="watch-cta" onClick={runDemo}>WATCH A VEIL</button>
       </header>
 
       <section className="value-statement panel">
-        <strong>AI sounds convincing even when it’s wrong. CLASH shows that before it costs you.</strong>
+        <strong>AI sounds convincing even when it’s wrong. VEIL shows that before it costs you.</strong>
       </section>
 
       <section className="scenario-bar">
         <input value={scenario} onChange={(event) => setScenario(event.target.value)} placeholder="Enter a scenario..." />
-        <button onClick={startClash}>INITIATE CLASH</button>
-        <button className="demo-btn" onClick={runDemo}>WATCH NEXT CLASH</button>
+        <button onClick={startVeil}>INITIATE VEIL</button>
+        <button className="demo-btn" onClick={runDemo}>WATCH NEXT VEIL</button>
       </section>
 
       <section className="watch-picks">
@@ -991,11 +1000,8 @@ function App() {
         <button className="control-btn" disabled={!latestReplayPayload} onClick={exportReplay}>
           EXPORT REPLAY JSON
         </button>
-        <button className="control-btn" disabled={!replayState.outcome} onClick={() => void shareClash()}>
-          SHARE THIS CLASH
-        </button>
-        <button className="control-btn" onClick={() => void connectWallet()}>
-          {walletAddress ? "WALLET CONNECTED" : "CONNECT WALLET"}
+        <button className="control-btn" disabled={!replayState.outcome} onClick={() => void shareVeil()}>
+          SHARE THIS VEIL
         </button>
         <span className="status-chip">
           {replayState.sessionId
@@ -1010,14 +1016,6 @@ function App() {
       {walletError && <p className="warning-chip">{walletError}</p>}
 
       {serverWarning && <p className="warning-chip">{serverWarning}</p>}
-
-      <section className="scenario-suggestions">
-        {initialScenarios.map((item) => (
-          <button key={item} onClick={() => setScenario(item)}>
-            {item}
-          </button>
-        ))}
-      </section>
 
       <TimelineScrubber
         cursorMs={cursorMs}

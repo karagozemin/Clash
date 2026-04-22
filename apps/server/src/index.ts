@@ -23,7 +23,7 @@ dotenvConfig();
 dotenvConfig({ path: path.join(repositoryRoot, ".env"), override: false });
 
 const detectLlmProviderHint = () => {
-  const baseUrl = process.env.CLASH_LLM_BASE_URL?.trim().toLowerCase() ?? "";
+  const baseUrl = process.env.VEIL_LLM_BASE_URL?.trim().toLowerCase() ?? "";
   if (!baseUrl) {
     return "default-openai-compatible";
   }
@@ -46,10 +46,10 @@ app.use(express.json());
 app.get("/health", (_req: Request, res: Response) => {
   res.json({
     ok: true,
-    service: "clash-server",
-    liveAiConfigured: Boolean(process.env.CLASH_LLM_API_KEY?.trim()),
-    llmBaseUrlConfigured: Boolean(process.env.CLASH_LLM_BASE_URL?.trim()),
-    llmModelConfigured: Boolean(process.env.CLASH_LLM_MODEL?.trim()),
+    service: "veil-server",
+    liveAiConfigured: Boolean(process.env.VEIL_LLM_API_KEY?.trim()),
+    llmBaseUrlConfigured: Boolean(process.env.VEIL_LLM_BASE_URL?.trim()),
+    llmModelConfigured: Boolean(process.env.VEIL_LLM_MODEL?.trim()),
     llmProviderHint: detectLlmProviderHint()
   });
 });
@@ -103,7 +103,7 @@ io.on("connection", (socket: Socket) => {
     const sessionId = parsed.data.sessionId ?? `match_${Math.random().toString(36).slice(2, 9)}`;
     const inputScenario = parsed.data.scenario.trim();
     const requestedMode = parsed.data.mode ?? "simulation";
-    const liveAiAvailable = Boolean(process.env.CLASH_LLM_API_KEY?.trim());
+    const liveAiAvailable = Boolean(process.env.VEIL_LLM_API_KEY?.trim());
     const requestedLiveAiWithoutKey = requestedMode === "live-ai" && !liveAiAvailable;
     let resolvedMode: MatchMode = requestedMode === "live-ai" && liveAiAvailable ? "live-ai" : requestedMode === "demo" ? "demo" : "simulation";
     let scenario = inputScenario;
@@ -235,5 +235,5 @@ io.on("connection", (socket: Socket) => {
 
 const PORT = Number(process.env.PORT ?? 8787);
 server.listen(PORT, () => {
-  console.log(`CLASH server live on http://localhost:${PORT}`);
+  console.log(`VEIL server live on http://localhost:${PORT}`);
 });

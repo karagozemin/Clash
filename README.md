@@ -1,8 +1,12 @@
-# CLASH
+# VEIL
+
+<p align="center">
+	<img src="public/Veil-Logo.png" alt="VEIL Logo" width="200" />
+</p>
 
 **Tagline:** Where AI agents don’t agree — they compete.
 
-CLASH is a real-time AI battleground where five distinct agents analyze the same scenario, contradict each other, escalate through rebuttals, and produce an outcome layer that surfaces winner, risk, consensus, and manipulation signals.
+VEIL is a real-time AI battleground where five distinct agents analyze the same scenario, contradict each other, escalate through rebuttals, and produce an outcome layer that surfaces winner, risk, consensus, and manipulation signals.
 
 ## Product Highlights
 
@@ -26,7 +30,7 @@ CLASH is a real-time AI battleground where five distinct agents analyze the same
 ## Quick Start
 
 ```bash
-cd /Users/eminkaragoz/Desktop/projects/Clash
+cd <project-root>
 npm install
 npm run dev
 ```
@@ -36,21 +40,21 @@ npm run dev
 
 ## Demo Controls (Web)
 
-- `WATCH A CLASH`: One-click instant demo start with curated conflict scenarios (no typing).
+- `WATCH A VEIL`: One-click instant demo start with curated conflict scenarios (no typing).
 - `REPLAY TIMELINE`: Drag scrubber to seek forward/backward instantly; use `PLAY`, `PAUSE`, and `REPLAY`.
 - `REPLAY HIGHLIGHTS`: Jump to `FIRST CONFLICT`, `PEAK MANIPULATION`, and `FINAL OUTCOME`.
 - `LIVE SCENE`: Shows the currently speaking agent and stage progression in real time.
 - `CAMERA MODE`: Replay automatically focuses the active agent and de-emphasizes others.
-- `LIVE AI` / `SIMULATION`: Choose real model-backed agent generation or local deterministic simulation before `INITIATE CLASH`.
+- `LIVE AI` / `SIMULATION`: Choose real model-backed agent generation or local deterministic simulation before `INITIATE VEIL`.
 - `EXPORT REPLAY JSON`: Saves the latest valid session timeline as a JSON file.
-- `SHARE THIS CLASH`: Creates a share-ready snippet with scenario, winner, and impact statement.
+- `SHARE THIS VEIL`: Creates a share-ready snippet with scenario, winner, and impact statement.
 
 ## Demo Runner (CLI)
 
 Run deterministic-ish simulation output in terminal:
 
 ```bash
-npm --workspace @clash/server run demo -- "Should I long ETH after meme hype?"
+npm --workspace @veil/server run demo -- "Should I long ETH after meme hype?"
 ```
 
 ## Tests
@@ -105,52 +109,53 @@ GitHub Actions CI is configured in `.github/workflows/ci.yml` and runs:
 ## Sponsor Fit (Bounty Mapping)
 
 - `MYX` (AI-Driven Liquidity / Autonomous Trading):
-	- CLASH now emits a derived `MYX · PERP SIGNAL` card after each clash (`LONG/SHORT/NO-TRADE`, leverage, stop-loss, confidence).
+	- VEIL now emits a derived `MYX · PERP SIGNAL` card after each veil (`LONG/SHORT/NO-TRADE`, leverage, stop-loss, confidence).
 	- This turns multi-agent conflict output into an actionable trading signal layer.
 
 - `Pieverse` (Web3 Skills):
-	- CLASH includes wallet connection and chain context in-session (`CONNECT WALLET`, address + chain shown in UI).
+	- VEIL includes wallet connection and chain context in-session (`CONNECT WALLET`, address + chain shown in UI).
 	- This binds AI conflict outputs to a Web3-native runtime context.
 
 - `DGrid` (Unified LLM Access):
-	- CLASH uses OpenAI-compatible gateway routing through `CLASH_LLM_BASE_URL`.
+	- VEIL uses OpenAI-compatible gateway routing through `VEIL_LLM_BASE_URL`.
 	- `/health` now exposes `llmProviderHint` (e.g., `dgrid`) to prove gateway wiring at runtime.
 
 ## Environment
 
 Optional override for web socket endpoint:
 
-- `VITE_CLASH_SERVER` (default: `http://localhost:8787`)
+- `VITE_VEIL_SERVER` (default: `http://localhost:8787`)
+- `VITE_WALLETCONNECT_PROJECT_ID` (WalletConnect Cloud project id for `CONNECT WALLET`)
 
 Server variables for real LIVE AI mode:
 
-- `CLASH_LLM_API_KEY`: Required for `LIVE AI` mode
-- `CLASH_LLM_MODEL`: Optional (default: `gpt-4o-mini`)
-- `CLASH_LLM_BASE_URL`: Optional OpenAI-compatible base URL (default: `https://api.openai.com/v1`)
-- `CLASH_LLM_TIMEOUT_MS`: Optional request timeout in ms (default: `16000`)
-- `CLASH_LLM_MAX_RETRIES`: Optional retry count (default: `2`)
-- `CLASH_LLM_BREAKER_COOLDOWN_MS`: Optional circuit-breaker cooldown in ms (default: `45000`)
+- `VEIL_LLM_API_KEY`: Required for `LIVE AI` mode
+- `VEIL_LLM_MODEL`: Optional (default: `gpt-4o-mini`)
+- `VEIL_LLM_BASE_URL`: Optional OpenAI-compatible base URL (default: `https://api.openai.com/v1`)
+- `VEIL_LLM_TIMEOUT_MS`: Optional request timeout in ms (default: `16000`)
+- `VEIL_LLM_MAX_RETRIES`: Optional retry count (default: `2`)
+- `VEIL_LLM_BREAKER_COOLDOWN_MS`: Optional circuit-breaker cooldown in ms (default: `45000`)
 
 ### Groq Setup (recommended for speed)
 
 Use these values in your root `.env`:
 
 ```bash
-CLASH_LLM_API_KEY=your_groq_key
-CLASH_LLM_MODEL=llama-3.3-70b-versatile
-CLASH_LLM_BASE_URL=https://api.groq.com/openai/v1
+VEIL_LLM_API_KEY=your_groq_key
+VEIL_LLM_MODEL=llama-3.3-70b-versatile
+VEIL_LLM_BASE_URL=https://api.groq.com/openai/v1
 ```
 
-Then start the app and select `LIVE AI` before `INITIATE CLASH`.
+Then start the app and select `LIVE AI` before `INITIATE VEIL`.
 
 ### DGrid Setup (for DGrid bounty)
 
 Use these values in your root `.env`:
 
 ```bash
-CLASH_LLM_API_KEY=your_dgrid_key
-CLASH_LLM_MODEL=your_dgrid_model
-CLASH_LLM_BASE_URL=https://your-dgrid-openai-compatible-endpoint
+VEIL_LLM_API_KEY=your_dgrid_key
+VEIL_LLM_MODEL=your_dgrid_model
+VEIL_LLM_BASE_URL=https://your-dgrid-openai-compatible-endpoint
 ```
 
 Verify gateway hint in server health:
@@ -166,13 +171,13 @@ Security note: never commit real API keys; keep them only in local `.env`.
 Create `apps/web/.env` if needed:
 
 ```bash
-VITE_CLASH_SERVER=http://localhost:8787
+VITE_VEIL_SERVER=http://localhost:8787
 ```
 
 Create root `.env` (or export env vars in shell) for LIVE AI:
 
 ```bash
-CLASH_LLM_API_KEY=your_api_key
-CLASH_LLM_MODEL=gpt-4o-mini
-CLASH_LLM_BASE_URL=https://api.openai.com/v1
+VEIL_LLM_API_KEY=your_api_key
+VEIL_LLM_MODEL=gpt-4o-mini
+VEIL_LLM_BASE_URL=https://api.openai.com/v1
 ```

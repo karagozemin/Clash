@@ -4,7 +4,7 @@ const scenario = process.argv.slice(2).join(" ") || "Should I long ETH after mem
 
 const result = runConflictRound(scenario);
 
-console.log("=== CLASH DEMO RUN ===");
+console.log("=== VEIL DEMO RUN ===");
 console.log("Scenario:", scenario);
 console.log("\nAgent decisions:");
 for (const turn of result.turns) {

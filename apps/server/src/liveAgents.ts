@@ -42,20 +42,20 @@ const signatureByRole: Record<AgentProfile["role"], string> = {
 const decisionList: Decision[] = ["BUY", "SELL", "HOLD", "DO_NOT_TOUCH", "LAUNCH", "WAIT"];
 
 const getLiveConfig = () => ({
-  baseUrl: process.env.CLASH_LLM_BASE_URL?.trim() || "https://api.openai.com/v1",
-  model: process.env.CLASH_LLM_MODEL?.trim() || "gpt-4o-mini",
-  requestTimeoutMs: Number(process.env.CLASH_LLM_TIMEOUT_MS ?? 16000),
-  maxRetries: Number(process.env.CLASH_LLM_MAX_RETRIES ?? 2),
-  breakerCooldownMs: Number(process.env.CLASH_LLM_BREAKER_COOLDOWN_MS ?? 45000)
+  baseUrl: process.env.VEIL_LLM_BASE_URL?.trim() || "https://api.openai.com/v1",
+  model: process.env.VEIL_LLM_MODEL?.trim() || "gpt-4o-mini",
+  requestTimeoutMs: Number(process.env.VEIL_LLM_TIMEOUT_MS ?? 16000),
+  maxRetries: Number(process.env.VEIL_LLM_MAX_RETRIES ?? 2),
+  breakerCooldownMs: Number(process.env.VEIL_LLM_BREAKER_COOLDOWN_MS ?? 45000)
 });
 
 let consecutiveFailures = 0;
 let circuitOpenUntil = 0;
 
 const getApiKey = () => {
-  const key = process.env.CLASH_LLM_API_KEY?.trim();
+  const key = process.env.VEIL_LLM_API_KEY?.trim();
   if (!key) {
-    throw new Error("Missing CLASH_LLM_API_KEY for LIVE AI mode.");
+    throw new Error("Missing VEIL_LLM_API_KEY for LIVE AI mode.");
   }
   return key;
 };

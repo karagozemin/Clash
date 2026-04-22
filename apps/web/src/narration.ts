@@ -53,5 +53,5 @@ export const narrationForEvent = (event: MatchEvent | null) => {
     return "System detects inconsistency and rejects manipulation.";
   }
 
-  return "Final verdict delivered. Reliability wins this clash.";
+  return "Final verdict delivered. Reliability wins this veil.";
 };

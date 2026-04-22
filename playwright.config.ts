@@ -20,9 +20,9 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     env: {
       ...process.env,
-      CLASH_LLM_API_KEY: "",
-      CLASH_LLM_MODEL: process.env.CLASH_LLM_MODEL ?? "llama-3.3-70b-versatile",
-      CLASH_LLM_BASE_URL: process.env.CLASH_LLM_BASE_URL ?? "https://api.groq.com/openai/v1"
+      VEIL_LLM_API_KEY: "",
+      VEIL_LLM_MODEL: process.env.VEIL_LLM_MODEL ?? "llama-3.3-70b-versatile",
+      VEIL_LLM_BASE_URL: process.env.VEIL_LLM_BASE_URL ?? "https://api.groq.com/openai/v1"
     }
   }
 });

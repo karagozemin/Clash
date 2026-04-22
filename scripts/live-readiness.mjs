@@ -1,18 +1,18 @@
 import "dotenv/config";
 
 const missing = [];
-if (!process.env.CLASH_LLM_API_KEY?.trim()) missing.push("CLASH_LLM_API_KEY");
-if (!process.env.CLASH_LLM_BASE_URL?.trim()) missing.push("CLASH_LLM_BASE_URL");
-if (!process.env.CLASH_LLM_MODEL?.trim()) missing.push("CLASH_LLM_MODEL");
+if (!process.env.VEIL_LLM_API_KEY?.trim()) missing.push("VEIL_LLM_API_KEY");
+if (!process.env.VEIL_LLM_BASE_URL?.trim()) missing.push("VEIL_LLM_BASE_URL");
+if (!process.env.VEIL_LLM_MODEL?.trim()) missing.push("VEIL_LLM_MODEL");
 
 if (missing.length) {
   console.log(JSON.stringify({ ok: false, reason: "missing_env", missing }, null, 2));
   process.exit(1);
 }
 
-const base = process.env.CLASH_LLM_BASE_URL.replace(/\/$/, "");
-const key = process.env.CLASH_LLM_API_KEY;
-const model = process.env.CLASH_LLM_MODEL;
+const base = process.env.VEIL_LLM_BASE_URL.replace(/\/$/, "");
+const key = process.env.VEIL_LLM_API_KEY;
+const model = process.env.VEIL_LLM_MODEL;
 
 const response = await fetch(`${base}/chat/completions`, {
   method: "POST",

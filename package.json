@@ -1,5 +1,5 @@
 {
-  "name": "clash",
+  "name": "veil",
   "private": true,
   "version": "1.0.0",
   "workspaces": [
@@ -7,12 +7,12 @@
   ],
   "scripts": {
     "dev": "npm-run-all --parallel dev:server dev:web",
-    "dev:server": "npm --workspace @clash/server run dev",
-    "dev:web": "npm --workspace @clash/web run dev",
+    "dev:server": "npm --workspace @veil/server run dev",
+    "dev:web": "npm --workspace @veil/web run dev",
     "build": "npm-run-all build:server build:web",
-    "build:server": "npm --workspace @clash/server run build",
-    "build:web": "npm --workspace @clash/web run build",
-    "test": "npm --workspace @clash/server run test",
+    "build:server": "npm --workspace @veil/server run build",
+    "build:web": "npm --workspace @veil/web run build",
+    "test": "npm --workspace @veil/server run test",
     "check:live": "node scripts/live-readiness.mjs",
     "test:e2e": "playwright test"
   },

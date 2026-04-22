@@ -56,6 +56,33 @@ body {
   mix-blend-mode: soft-light;
 }
 
+.wallet-float-btn {
+  position: absolute;
+  top: 26px;
+  right: 26px;
+  z-index: 12;
+  border: 1px solid #4f5ca1;
+  background: #121a34;
+  color: #dce4ff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.wallet-float-btn:hover {
+  background: #1a2550;
+  box-shadow: 0 0 12px #6f7edc55;
+}
+
+.hero-logo {
+  width: clamp(72px, 10vw, 120px);
+  height: auto;
+  display: block;
+  margin-bottom: 10px;
+}
+
 .hero h1 {
   margin: 0;
   letter-spacing: 0.2em;
@@ -148,13 +175,6 @@ body {
 
 .scenario-bar .demo-btn {
   background: linear-gradient(135deg, #ff9f43, #ff5da8);
-}
-
-.scenario-suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
 }
 
 .controls-bar {
@@ -405,16 +425,6 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.scenario-suggestions button {
-  background: #111522;
-  color: #aeb6d6;
-  border: 1px solid #28314a;
-  border-radius: 999px;
-  padding: 8px 12px;
-  font-size: 0.86rem;
-  cursor: pointer;
 }
 
 .battle-grid {
@@ -696,7 +706,7 @@ body {
 .camera-outcome .battle-grid,
 .camera-outcome .scenario-bar,
 .camera-outcome .controls-bar,
-.camera-outcome .scenario-suggestions,
+.camera-outcome .watch-picks,
 .camera-outcome .timeline-scrubber,
 .camera-outcome .hero,
 .camera-outcome .outcome-layer {
@@ -918,6 +928,12 @@ body {
 }
 
 @media (max-width: 1150px) {
+  .wallet-float-btn {
+    position: static;
+    margin-top: 10px;
+    width: fit-content;
+  }
+
   .battle-grid {
     grid-template-columns: 1fr;
   }
